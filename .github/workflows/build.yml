@@ -1,0 +1,36 @@
+name: Build FoundryVTT Module
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-foundry-module:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate module.json
+        run: npm run build
+
+      - name: Create FoundryVTT module zip
+        run: |
+          zip -r foundry-local-rest-api.zip . -x "*.git*" "node_modules/*" "*.DS_Store*" "module.json.template"
+
+      - name: Upload FoundryVTT module artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" foundry-local-rest-api.zip module.json

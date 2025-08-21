@@ -1,0 +1,31 @@
+{
+  "name": "foundry-local-rest-api",
+  "version": "1.0.0",
+  "description": "A FoundryVTT module that provides a local REST API for FoundryVTT worlds",
+  "main": "scripts/rest-api.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/foundryvtt-local-rest-api.git"
+  },
+  "keywords": [
+    "foundry",
+    "foundryvtt",
+    "rest-api",
+    "module",
+    "tabletop",
+    "rpg"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/foundryvtt-local-rest-api/issues"
+  },
+  "homepage": "https://github.com/yourusername/foundryvtt-local-rest-api#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
