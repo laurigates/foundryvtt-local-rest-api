@@ -24,10 +24,13 @@ export function isResponseMessage(data) {
 /**
  * Decide whether this client answers a request.
  *
- * Every client running the module receives every request, so exactly one of
- * them must answer: the designated active Gamemaster, not counting the sender.
- * The sender is excluded because the bridge server may itself log in as a
- * Gamemaster-role user, and it does not run module code.
+ * Every client running the module receives every request, so one of them
+ * should answer: the designated active Gamemaster. The sending user is not a
+ * candidate, because the bridge server may log in as a Gamemaster-role user
+ * and does not run module code; the exception is a browser logged in as that
+ * same user, which receives the request on its own socket and can answer it.
+ * In that one case a second GM client may answer as well; the bridge uses the
+ * first response and ignores the rest.
  *
  * @param {object} users      The world's Users collection (`game.users`)
  * @param {string} [senderId] The id of the user that sent the request
@@ -36,7 +39,7 @@ export function isResponseMessage(data) {
 export function shouldHandleRequest(users, senderId) {
   if (!users || typeof users.getDesignatedUser !== 'function') return false;
   const designated = users.getDesignatedUser(
-    (user) => user.active && user.isGM && user.id !== senderId
+    (user) => user.active && user.isGM && (user.id !== senderId || user.isSelf)
   );
   return designated?.isSelf === true;
 }

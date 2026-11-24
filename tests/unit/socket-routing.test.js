@@ -55,6 +55,17 @@ describe('socket routing', () => {
       expect(shouldHandleRequest(usersOf([bridge, player]), bridge.id)).toBe(false);
     });
 
+    test('a browser logged in as the sending user answers on its own socket', () => {
+      const bridgeBrowser = { ...bridge, isSelf: true };
+      expect(shouldHandleRequest(usersOf([bridgeBrowser]), bridge.id)).toBe(true);
+    });
+
+    test('another GM client does not count the sending user as a candidate', () => {
+      // In gmOther's view the bridge user (lower id) is excluded, so gmOther is designated.
+      const otherSelf = { ...gmOther, isSelf: true };
+      expect(shouldHandleRequest(usersOf([bridge, otherSelf]), bridge.id)).toBe(true);
+    });
+
     test('an inactive GM is not designated', () => {
       const idle = { ...gmSelf, active: false };
       expect(shouldHandleRequest(usersOf([bridge, idle]), bridge.id)).toBe(false);
