@@ -50,10 +50,9 @@ export class SocketMessageHandler {
       };
     }
 
-    // Also register legacy socket handler for backward compatibility with bridge
-    if (game?.socket?.on) {
-      game.socket.on('module.foundryvtt-local-rest-api', this.handleMessage.bind(this));
-    }
+    // The module socket listener is owned by FoundryLocalRestAPI.setupSocketHandlers,
+    // which respects the enable-api setting and sends the response. Registering
+    // handleMessage here as well ran every request twice and discarded one result.
   }
 
   /**

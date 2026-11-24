@@ -2,6 +2,8 @@
  * Items API endpoints for the Foundry Local REST API
  */
 
+import { formatSource } from './actors.js';
+
 export class ItemsAPI {
 
   /**
@@ -154,12 +156,13 @@ export class ItemsAPI {
         value: system.price?.value || system.cost || 0,
         denomination: system.price?.denomination || 'gp'
       },
-      weight: system.weight || 0,
+      // dnd5e 3+: weight is {value, units}
+      weight: (typeof system.weight === 'object' ? system.weight?.value : system.weight) ?? 0,
       quantity: system.quantity || 1,
       equipped: system.equipped || false,
       identified: system.identified !== false,
       attunement: system.attunement || 0,
-      source: system.source || system.details?.source || null,
+      source: formatSource(system.source ?? system.details?.source),
       owner: item._ownerName ? {
         id: item._ownerId,
         name: item._ownerName
@@ -228,11 +231,12 @@ export class ItemsAPI {
       flags: item.flags,
       effects: Array.from(item.effects || []).map(effect => ({
         id: effect.id,
-        name: effect.name || effect.label,
-        icon: effect.icon,
+        name: effect.name,
+        icon: effect.img,
         disabled: effect.disabled,
         transfer: effect.transfer,
-        changes: effect.changes || []
+        // v14 moved changes to `system.changes`; v13 has them at the top level.
+        changes: effect.system?.changes ?? effect.changes ?? []
       }))
     };
   }

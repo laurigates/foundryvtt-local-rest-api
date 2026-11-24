@@ -2,6 +2,64 @@
  * Scenes API endpoints for the Foundry Local REST API
  */
 
+/**
+ * The Level that carries a scene's images on v14, or null on v13.
+ *
+ * v14 moved the background and foreground from Scene to its Levels
+ * (`Scene#initialLevel`, `Level#background`, `Level#textures`). The old
+ * `Scene#background` and `Scene#foreground` getters still answer but log a
+ * deprecation warning, and `Scene#img` is gone.
+ * @param {object} scene
+ * @returns {object|null}
+ */
+function sceneLevel(scene) {
+  return scene.initialLevel ?? null;
+}
+
+/**
+ * @param {object} scene
+ * @returns {string|null} The background image path
+ */
+export function sceneBackgroundSrc(scene) {
+  const level = sceneLevel(scene);
+  if (level) return level.background?.src || null;
+  return scene.background?.src || scene.img || null;
+}
+
+/**
+ * @param {object} scene
+ * @returns {string|null} The foreground image path
+ */
+export function sceneForegroundSrc(scene) {
+  const level = sceneLevel(scene);
+  if (level) return level.foreground?.src || null;
+  return scene.foreground || null;
+}
+
+/**
+ * @param {object} scene
+ * @returns {{src: string|null, offsetX: number, offsetY: number, scaleX: number, scaleY: number}}
+ */
+export function formatSceneBackground(scene) {
+  const level = sceneLevel(scene);
+  if (level) {
+    return {
+      src: level.background?.src || null,
+      offsetX: scene.shiftX ?? 0,
+      offsetY: scene.shiftY ?? 0,
+      scaleX: level.textures?.scaleX ?? 1,
+      scaleY: level.textures?.scaleY ?? 1
+    };
+  }
+  return {
+    src: scene.background?.src || scene.img || null,
+    offsetX: scene.background?.offsetX || 0,
+    offsetY: scene.background?.offsetY || 0,
+    scaleX: scene.background?.scaleX || 1,
+    scaleY: scene.background?.scaleY || 1
+  };
+}
+
 export class ScenesAPI {
 
   /**
@@ -122,7 +180,7 @@ export class ScenesAPI {
       id: scene.id,
       name: scene.name,
       navName: scene.navName,
-      img: scene.img,
+      img: sceneBackgroundSrc(scene),
       thumb: scene.thumb,
       active: scene.active,
       navigation: scene.navigation,
@@ -148,15 +206,9 @@ export class ScenesAPI {
     return {
       ...summary,
       // Additional detailed information
-      background: {
-        src: scene.background?.src || scene.img,
-        offsetX: scene.background?.offsetX || 0,
-        offsetY: scene.background?.offsetY || 0,
-        scaleX: scene.background?.scaleX || 1,
-        scaleY: scene.background?.scaleY || 1
-      },
-      foreground: scene.foreground || null,
-      darkness: scene.darkness || 0,
+      background: formatSceneBackground(scene),
+      foreground: sceneForegroundSrc(scene),
+      darkness: scene.environment?.darknessLevel ?? scene.darkness ?? 0,
       fogExploration: scene.fogExploration || false,
       globalLight: scene.globalLight || false,
       globalLightThreshold: scene.globalLightThreshold || null,

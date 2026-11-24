@@ -9,6 +9,8 @@ export default {
     '**/tests/**/*.test.js',
     '**/__tests__/**/*.js'
   ],
+  // bridge-server has its own Node-environment Jest config (npm test in bridge-server/)
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/bridge-server/'],
   collectCoverageFrom: [
     'scripts/**/*.js',
     '!scripts/build.js',

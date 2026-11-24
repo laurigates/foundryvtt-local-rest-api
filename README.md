@@ -49,7 +49,7 @@ This solution consists of two components that work together:
 ## 🚀 Installation
 
 ### Prerequisites
-- FoundryVTT v11+ running on your system
+- FoundryVTT v13 or v14 running on your system, with a Gamemaster logged in through a browser (that client answers the bridge's requests)
 - Node.js 16+ installed for the bridge server
 
 ### Step 1: Install FoundryVTT Module
