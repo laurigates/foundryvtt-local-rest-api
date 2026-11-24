@@ -8,7 +8,7 @@ A **purely local** REST API solution for FoundryVTT that provides HTTP endpoints
 **Purpose**: Local REST API server for FoundryVTT game data  
 **License**: MIT  
 **Node Version**: >=16.0.0  
-**FoundryVTT Compatibility**: v13-v14 (verified on v13; see module.json.template)  
+**FoundryVTT Compatibility**: v13-v14 (verified on 14.369; see module.json.template)  
 
 ## Architecture
 
@@ -250,7 +250,7 @@ actors = response.json()
 ### Runtime Dependencies
 
 **FoundryVTT Module:**
-- **FoundryVTT**: v13-v14 (`compatibility.verified` stays 13 until the module has run on v14)
+- **FoundryVTT**: v13-v14 (`compatibility.verified` is 14.369, the build the module has run on; see ADR-0002)
 - **Browser**: Modern ES6+ support with Socket.io
 - **No External Libraries**: Pure JavaScript implementation
 
