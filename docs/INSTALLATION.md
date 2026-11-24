@@ -17,7 +17,7 @@ External App → Bridge Server → Socket.io → FoundryVTT Module → Game Data
 ## Prerequisites
 
 - **FoundryVTT v11+** running on your system
-- **Node.js 16+** installed for the bridge server
+- **Node.js 22.12+** installed for the bridge server
 - Basic familiarity with command line operations
 
 ## Step-by-Step Installation
@@ -98,7 +98,7 @@ External App → Bridge Server → Socket.io → FoundryVTT Module → Game Data
    ```bash
    curl http://localhost:3030/api/status
    ```
-   
+
    Expected response:
    ```json
    {
@@ -171,10 +171,10 @@ pm2 startup
 
 Create `bridge-server/Dockerfile`:
 ```dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 COPY . .
 EXPOSE 3030
 CMD ["npm", "start"]
@@ -204,7 +204,7 @@ CORS_ORIGIN=https://your-app-domain.com
 ### Common Issues
 
 1. **Bridge Server Won't Start**:
-   - Check Node.js version: `node --version` (should be 16+)
+   - Check Node.js version: `node --version` (should be 22.12+)
    - Verify port 3030 is available: `lsof -i :3030`
    - Check for missing dependencies: `npm install`
 

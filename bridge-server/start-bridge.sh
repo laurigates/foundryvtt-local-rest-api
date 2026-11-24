@@ -11,7 +11,7 @@ echo "===================================="
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
     echo "❌ Error: Node.js is not installed"
-    echo "Please install Node.js 16+ from https://nodejs.org/"
+    echo "Please install Node.js 22+ from https://nodejs.org/"
     exit 1
 fi
 
@@ -19,9 +19,9 @@ fi
 NODE_VERSION=$(node --version | cut -d'v' -f2)
 NODE_MAJOR=$(echo $NODE_VERSION | cut -d'.' -f1)
 
-if [ "$NODE_MAJOR" -lt 16 ]; then
+if [ "$NODE_MAJOR" -lt 22 ]; then
     echo "❌ Error: Node.js version $NODE_VERSION is too old"
-    echo "Please upgrade to Node.js 16+ from https://nodejs.org/"
+    echo "Please upgrade to Node.js 22+ from https://nodejs.org/"
     exit 1
 fi
 

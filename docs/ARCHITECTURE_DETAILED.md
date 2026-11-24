@@ -48,7 +48,7 @@ graph TB
     subgraph "External Client"
         HTTP[HTTP Client<br/>curl, postman, scripts]
     end
-    
+
     subgraph "Local Network"
         subgraph "Bridge Server Process"
             BS[Node.js Bridge Server<br/>Port 3030]
@@ -56,12 +56,12 @@ graph TB
             AUTH[Auth Manager]
             ROUTES[Route Handlers]
         end
-        
+
         subgraph "FoundryVTT Server Process"
             FVS[FoundryVTT Server<br/>Port 30000]
             WSS[WebSocket Server<br/>socket.io]
         end
-        
+
         subgraph "Browser (GM)"
             FVM[FoundryVTT Module<br/>foundryvtt-local-rest-api]
             WSC[WebSocket Client<br/>socket.io]
@@ -70,24 +70,24 @@ graph TB
             DATA[Game Data Access]
         end
     end
-    
+
     %% External to Bridge
     HTTP -->|REST API Calls| BS
-    
+
     %% Bridge Internal Flow
     BS --> AUTH
     BS --> ROUTES
     ROUTES --> SC
-    
+
     %% Bridge to FoundryVTT
     SC -->|socket.io| WSS
     WSS --> WSC
-    
+
     %% Module Internal Flow
     WSC --> SH
     SH --> API
     API --> DATA
-    
+
     %% Response Flow
     DATA --> API
     API --> SH
@@ -97,13 +97,13 @@ graph TB
     SC --> ROUTES
     ROUTES --> BS
     BS --> HTTP
-    
+
     %% Styling
     classDef external fill:#e1f5fe
     classDef bridge fill:#f3e5f5
     classDef foundry fill:#e8f5e8
     classDef browser fill:#fff3e0
-    
+
     class HTTP external
     class BS,SC,AUTH,ROUTES bridge
     class FVS,WSS foundry
@@ -119,38 +119,38 @@ sequenceDiagram
     participant Socket as Socket.io
     participant Module as FoundryVTT Module
     participant Game as Game Data
-    
+
     Note over Client,Game: Request Flow Example: GET /api/actors
-    
+
     Client->>+Bridge: GET /api/actors?type=character
     Note over Bridge: Authenticate API key
     Bridge->>Bridge: Validate request & headers
-    
+
     Bridge->>+Socket: Emit socket message
     Note over Socket: Forward via WebSocket
     Socket->>+Module: module.foundryvtt-local-rest-api
-    
+
     Note over Module: Process request
     Module->>Module: Authenticate socket message
     Module->>Module: Parse parameters
     Module->>+Game: Query actors collection
     Game-->>-Module: Return actor data
-    
+
     Module->>Module: Format response
     Module->>-Socket: Emit response message
     Socket->>-Bridge: Forward response
-    
+
     Bridge->>Bridge: Format as HTTP response
     Bridge->>-Client: JSON response with actors
-    
+
     Note over Client,Game: Error Flow Example: Authentication Failure
-    
+
     Client->>+Bridge: GET /api/actors (invalid key)
     Bridge->>Bridge: Authentication fails
     Bridge->>-Client: 401 Unauthorized
-    
+
     Note over Client,Game: Connection Error Flow
-    
+
     Client->>+Bridge: GET /api/world
     Bridge->>+Socket: Emit socket message
     Socket-->>Bridge: Connection timeout
@@ -166,34 +166,34 @@ graph LR
             FVTT[FoundryVTT Server<br/>localhost:30000]
             MODULES[modules/<br/>foundryvtt-local-rest-api/]
         end
-        
+
         subgraph "Bridge Server Installation"
             NODE[Node.js Runtime]
             BRIDGE[bridge-server/<br/>localhost:3030]
             ENV[.env Configuration]
         end
     end
-    
+
     subgraph "External Access"
         API[REST API Clients<br/>Scripts, Tools, etc.]
         MCP[FoundryVTT MCP Server]
     end
-    
+
     %% Installation relationships
     FVTT --> MODULES
     NODE --> BRIDGE
     BRIDGE --> ENV
-    
+
     %% Runtime connections
     API --> BRIDGE
     MCP --> BRIDGE
     BRIDGE -.->|socket.io| FVTT
-    
+
     %% Styling
     classDef install fill:#e3f2fd
     classDef runtime fill:#f1f8e9
     classDef external fill:#fce4ec
-    
+
     class FVTT,MODULES,NODE,BRIDGE,ENV install
     class API,MCP external
 ```
@@ -282,7 +282,7 @@ class FoundrySocketClient {
    ```javascript
    // Authentication
    authManager.authenticate(req.headers['x-api-key'])
-   
+
    // Socket message creation
    const socketData = {
      type: 'actors.search',
@@ -301,13 +301,13 @@ class FoundrySocketClient {
    ```javascript
    // Received in socket handler
    const { type, requestId, auth, params } = data
-   
+
    // Authentication
    authManager.validateApiKey(auth.apiKey)
-   
+
    // Route to actors handler
    await actorsAPI.searchActors(mockReq, mockRes)
-   
+
    // Response creation
    return {
      requestId,
@@ -325,7 +325,7 @@ class FoundrySocketClient {
    ```http
    HTTP/1.1 200 OK
    Content-Type: application/json
-   
+
    {
      "success": true,
      "data": [
@@ -343,7 +343,7 @@ sequenceDiagram
     participant Client
     participant Bridge
     participant Auth as Auth Manager
-    
+
     Client->>Bridge: GET /api/actors (invalid key)
     Bridge->>Auth: authenticate(invalidKey)
     Auth-->>Bridge: false
@@ -357,7 +357,7 @@ sequenceDiagram
     participant Bridge
     participant Socket
     participant Module
-    
+
     Client->>Bridge: GET /api/world
     Bridge->>Socket: sendRequest()
     Socket->>Module: emit message
@@ -373,7 +373,7 @@ sequenceDiagram
     participant Bridge
     participant Socket
     participant Module
-    
+
     Client->>Bridge: GET /api/actors/:invalid-id
     Bridge->>Socket: sendRequest()
     Socket->>Module: emit message
@@ -445,9 +445,9 @@ const apiKey = authManager.generateApiKey(); // 256-bit cryptographic key
 // Bridge server validation
 class AuthManager {
   authenticate(req, res, next) {
-    const apiKey = req.headers['x-api-key'] || 
+    const apiKey = req.headers['x-api-key'] ||
                    req.headers.authorization?.replace('Bearer ', '');
-    
+
     if (!apiKey || !this.validateApiKey(apiKey)) {
       return res.status(401).json({
         success: false,
@@ -480,7 +480,7 @@ app.get('/api/actors', async (req, res) => {
       query: req.query,
       headers: { 'x-api-key': req.headers['x-api-key'] }
     });
-    
+
     res.json({
       success: true,
       data: result
@@ -534,7 +534,7 @@ graph TD
         MODULE[Module Auth Check]
         DATA[Data Access]
     end
-    
+
     HTTP --> BRIDGE
     BRIDGE -->|Valid API Key| SOCKET
     BRIDGE -->|Invalid Key| REJECT1[401 Unauthorized]
@@ -542,10 +542,10 @@ graph TD
     SOCKET -->|Invalid Message| REJECT2[Socket Error]
     MODULE -->|Authenticated| DATA
     MODULE -->|Unauthorized| REJECT3[403 Forbidden]
-    
+
     classDef security fill:#ffebee
     classDef reject fill:#f44336,color:#fff
-    
+
     class BRIDGE,SOCKET,MODULE security
     class REJECT1,REJECT2,REJECT3 reject
 ```
@@ -573,24 +573,24 @@ graph LR
         BRIDGE[Bridge Server<br/>localhost:3030]
         FOUNDRY[FoundryVTT<br/>localhost:30000]
     end
-    
+
     subgraph "Network Isolation"
         FIREWALL[Local Firewall]
         LOOPBACK[Loopback Interface<br/>127.0.0.1]
     end
-    
+
     APP --> BRIDGE
     BRIDGE -.-> LOOPBACK
     LOOPBACK -.-> FOUNDRY
     FIREWALL --> LOOPBACK
-    
+
     note1[No External Network Access]
     note2[All Traffic Local Only]
     note3[Privacy Guaranteed]
-    
+
     classDef local fill:#e8f5e8
     classDef security fill:#fff3e0
-    
+
     class APP,BRIDGE,FOUNDRY local
     class FIREWALL,LOOPBACK security
 ```
@@ -601,7 +601,7 @@ graph LR
 
 #### Prerequisites
 - FoundryVTT Server running on port 30000
-- Node.js 16+ installed on same machine
+- Node.js 22.12+ installed on same machine
 - Network access between components
 
 #### Installation Steps
@@ -609,7 +609,7 @@ graph LR
    ```bash
    # Copy module to FoundryVTT modules directory
    cp -r foundryvtt-local-rest-api/ ~/foundrydata/modules/
-   
+
    # Enable module in FoundryVTT
    # Navigate to Module Management → Enable "FoundryVTT Local REST API"
    ```
@@ -618,10 +618,10 @@ graph LR
    ```bash
    # Navigate to bridge server directory
    cd bridge-server/
-   
+
    # Install dependencies
    npm install
-   
+
    # Configure environment
    cp .env.example .env
    # Edit .env with API key from FoundryVTT module settings
@@ -631,7 +631,7 @@ graph LR
    ```bash
    # Start FoundryVTT (if not running)
    node foundry.js --dataPath=~/foundrydata
-   
+
    # Start bridge server
    npm start
    ```
@@ -641,11 +641,11 @@ graph LR
 #### Container Configuration
 ```dockerfile
 # Bridge Server Dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 COPY bridge-server/ .
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 EXPOSE 3030
 CMD ["npm", "start"]
@@ -662,7 +662,7 @@ services:
     volumes:
       - foundry-data:/data
       - ./foundryvtt-local-rest-api:/data/modules/foundryvtt-local-rest-api
-    
+
   bridge-server:
     build: ./bridge-server
     ports:
@@ -765,12 +765,12 @@ graph TD
     CHECK2{API key matches<br/>FoundryVTT module?}
     CHECK3{Headers properly<br/>formatted?}
     CHECK4{Module enabled<br/>in FoundryVTT?}
-    
+
     FIX1[Configure API_KEY<br/>in .env file]
     FIX2[Copy key from<br/>FoundryVTT settings]
     FIX3[Use x-api-key header<br/>or Bearer token]
     FIX4[Enable module in<br/>Module Management]
-    
+
     START --> CHECK1
     CHECK1 -->|No| FIX1
     CHECK1 -->|Yes| CHECK2

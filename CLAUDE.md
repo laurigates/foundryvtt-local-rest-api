@@ -7,7 +7,7 @@ A **purely local** REST API solution for FoundryVTT that provides HTTP endpoints
 **Type**: FoundryVTT Module + Node.js Bridge Server  
 **Purpose**: Local REST API server for FoundryVTT game data  
 **License**: MIT  
-**Node Version**: >=16.0.0  
+**Node Version**: >=22.12.0  
 **FoundryVTT Compatibility**: v13-v14 (verified on 14.369; see module.json.template)  
 
 ## Architecture
@@ -116,7 +116,7 @@ zip -r foundryvtt-local-rest-api.zip . -x "*.git*" "node_modules/*" "bridge-serv
 
 ### Release Pipeline
 - **Trigger**: Git tags matching `v*.*.*` pattern
-- **Platform**: Ubuntu latest with Node.js 18
+- **Platform**: Ubuntu latest with Node.js 22 and 24 (matrix)
 - **Steps**:
   1. Checkout code
   2. Install module dependencies (`npm ci`)
@@ -255,7 +255,7 @@ actors = response.json()
 - **No External Libraries**: Pure JavaScript implementation
 
 **Bridge Server:**
-- **Node.js**: >=16.0.0 runtime environment
+- **Node.js**: >=22.12.0 runtime environment
 - **Express**: HTTP server framework
 - **Socket.io-client**: WebSocket communication with FoundryVTT
 - **CORS**: Cross-origin request handling
@@ -263,7 +263,7 @@ actors = response.json()
 - **dotenv**: Environment variable management
 
 ### Development Dependencies  
-- **Node.js**: >=16.0.0 for development and build process
+- **Node.js**: >=22.12.0 for development and build process
 - **Jest**: Test framework (both components)
 - **Supertest**: HTTP endpoint testing
 - **Git**: For repository metadata extraction
@@ -306,7 +306,7 @@ actors = response.json()
 - **Empty Results**: Validate search parameters and world data existence
 
 **Development Issues:**
-- **Build Failures**: Ensure Node.js >=16 and git repository setup
+- **Build Failures**: Ensure Node.js >=22.12 and git repository setup
 - **Test Failures**: Install dependencies in both root and bridge-server directories
 
 ### Debug Mode
