@@ -1,0 +1,15 @@
+standards_version: "2026.11"
+project_type: "node"
+last_configured: "2026-11-24"
+components:
+  pre-commit: "2026.11"
+  justfile: "2026.11"
+  mise: "2026.11"
+  editor: "2026.11"
+  gitattributes: "2026.11"
+  worktreeinclude: "2026.11"
+  security: "2026.11"
+  claude-plugins: "2026.11"
+  readme: "2026.11"
+  readme_has_logo: true
+  readme_docs_pages: ["overview", "usage", "configuration", "development"]

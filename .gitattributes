@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+# Lockfiles are machine-generated
+package-lock.json linguist-generated=true -diff
+bridge-server/package-lock.json linguist-generated=true -diff
+
+# Release tooling output
+CHANGELOG.md linguist-generated=true

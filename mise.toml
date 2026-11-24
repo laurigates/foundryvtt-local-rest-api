@@ -1,0 +1,6 @@
+[tools]
+node = "22"
+just = "latest"
+"pipx:pre-commit" = "latest"
+"aqua:gitleaks/gitleaks" = "latest"
+"aqua:rhysd/actionlint" = "latest"
