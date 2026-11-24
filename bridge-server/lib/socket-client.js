@@ -22,6 +22,7 @@ export class FoundrySocketClient extends EventEmitter {
     // Authentication options
     this.username = options.username;
     this.password = options.password;
+    this.userId = options.userId;
     this.worldId = options.worldId;
     
     this.socket = null;
@@ -155,7 +156,7 @@ export class FoundrySocketClient extends EventEmitter {
       // If username and password are provided, authenticate first
       this.log('info', `Checking auth - username: ${this.username}, has password: ${!!this.password}`);
       
-      if (this.username && this.password) {
+      if ((this.username || this.userId) && this.password) {
         this.log('info', `Starting authentication for user: ${this.username}`);
         
         // Create and initialize the authenticator
@@ -163,35 +164,20 @@ export class FoundrySocketClient extends EventEmitter {
           foundryUrl: this.foundryUrl,
           username: this.username,
           password: this.password,
+          userId: this.userId,
           worldId: this.worldId
         });
         
         try {
           // Authenticate and get session cookie
-          const authResult = await this.authenticator.authenticate();
+          await this.authenticator.authenticate();
           this.log('info', '✅ Authentication successful, session obtained');
-          this.log('debug', `Session cookie: ${authResult.sessionCookie}`);
-          
-          // Get authenticated socket options
+          // Session in both the handshake query (v13) and the Cookie header (v14)
           const authOptions = this.authenticator.getSocketAuthOptions();
-          
-          // Merge authentication options with base options
           socketOptions = {
             ...socketOptions,
             ...authOptions,
-            // For websocket transport, we need to pass cookies differently
-            transports: ['websocket', 'polling'],
-            transportOptions: {
-              websocket: {
-                extraHeaders: {
-                  'Cookie': this.authenticator.sessionCookie,
-                  'User-Agent': 'FoundryVTT-Bridge-Server/1.0'
-                }
-              },
-              polling: authOptions.transportOptions?.polling || {}
-            },
-            auth: authOptions.auth,
-            withCredentials: true
+            query: { ...socketOptions.query, ...authOptions.query }
           };
           
           this.log('info', 'Connecting as authenticated Socket.io client');
@@ -304,7 +290,18 @@ export class FoundrySocketClient extends EventEmitter {
       }
     });
 
-    // Listen for API responses from FoundryVTT module
+    // Listen for API responses from the FoundryVTT module. Foundry's server
+    // relays only the `module.<id>` event itself, so the module answers on the
+    // request event and marks the message `isResponse`. Requests broadcast by
+    // other clients arrive here too and are ignored.
+    this.socket.on(this.namespace, (data) => {
+      if (data && data.isResponse === true) {
+        this.handleApiResponse(data);
+      }
+    });
+
+    // Older module builds answered on `<namespace>.response`, which a real
+    // Foundry server never relays; kept for direct Socket.IO test servers.
     this.socket.on(`${this.namespace}.response`, (data) => {
       this.handleApiResponse(data);
     });

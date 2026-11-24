@@ -63,6 +63,7 @@ class BridgeServer {
         namespace: process.env.FOUNDRY_NAMESPACE || 'module.foundryvtt-local-rest-api',
         username: process.env.FOUNDRY_USERNAME,
         password: process.env.FOUNDRY_PASSWORD,
+        userId: process.env.FOUNDRY_USER_ID,
         worldId: process.env.FOUNDRY_WORLD_ID
       });
 
