@@ -6,14 +6,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function getGitConfig(key, fallback = '') {
-  try {
-    return execSync(`git config --get ${key}`, { encoding: 'utf8' }).trim();
-  } catch {
-    return fallback;
-  }
-}
-
 function getGitRemoteInfo() {
   try {
     const remoteUrl = execSync('git config --get remote.origin.url', { encoding: 'utf8' }).trim();

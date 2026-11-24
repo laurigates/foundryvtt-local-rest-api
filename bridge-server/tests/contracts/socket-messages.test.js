@@ -3,8 +3,6 @@
  * These tests ensure both components agree on the message structure
  */
 
-import { jest } from '@jest/globals';
-
 describe('Socket Message Contract', () => {
   
   describe('Request Message Format', () => {

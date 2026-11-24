@@ -1,3 +1,4 @@
+/* global process -- only read behind a typeof check */
 /**
  * Diagnostics API Routes for FoundryVTT REST API Module
  * Provides log access and system health monitoring for external MCP integration
@@ -272,7 +273,7 @@ export class DiagnosticsAPI {
       recentErrors.forEach(error => {
         for (const pattern of this.errorPatterns) {
           if (pattern.test(error.message)) {
-            const category = pattern.source.replace(/[\/\\^$*+?.()|[\]{}]/g, '');
+            const category = pattern.source.replace(/[/\\^$*+?.()|[\]{}]/g, '');
             errorCategories[category] = (errorCategories[category] || 0) + 1;
             break;
           }

@@ -32,7 +32,6 @@ export class WorldAPI {
    */
   formatWorldInfo() {
     const world = game.world;
-    const settings = game.settings;
 
     return {
       // Basic world information

@@ -15,7 +15,7 @@ console.log('Starting E2E Test Components Check...');
 
 async function testComponents() {
   console.log('1. Testing AuthManager...');
-  const authManager = new AuthManager('test_key_123');
+  new AuthManager('test_key_123');
   console.log('AuthManager created successfully');
 
   console.log('2. Testing Express server...');
@@ -35,7 +35,7 @@ async function testComponents() {
   });
 
   console.log('4. Testing FoundrySocketClient...');
-  const socketClient = new FoundrySocketClient({
+  new FoundrySocketClient({
     foundryUrl: 'http://localhost:3033',
     requestTimeout: 2000
   });

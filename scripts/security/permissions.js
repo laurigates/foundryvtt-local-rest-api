@@ -387,7 +387,7 @@ export class PermissionValidator {
 
     // Prevent privilege escalation
     if (!user.isGM && updates.ownership) {
-      for (const [userId, level] of Object.entries(updates.ownership)) {
+      for (const level of Object.values(updates.ownership)) {
         if (level > this.DOCUMENT_PERMISSIONS.OWNER) {
           return {
             success: false,
