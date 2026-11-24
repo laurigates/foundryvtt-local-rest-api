@@ -20,8 +20,9 @@ and [ADR-0004](adrs/0004-one-socket-event-one-answering-gm.md).
 - A tagged release must exist. Releases come from release-please, which needs
   laurigates/gitops#442 merged and applied (it pushes the App credentials) and
   the module code from #3 and #4 on `main`.
-- Foundry 13 or 14. On 14 the module loads with a "not verified" warning until
-  `compatibility.verified` is raised after the live run.
+- Foundry 13 or 14. Releases up to 2.1.0 declare `compatibility.verified` 13,
+  so Foundry 14 loads them with a "not verified" warning; later releases
+  declare 14.369, the build the module has run on.
 - A world user for the bridge, with a password (step 3).
 
 ## 1. Install the module
