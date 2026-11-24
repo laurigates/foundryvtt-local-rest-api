@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.1.2](https://github.com/laurigates/foundryvtt-local-rest-api/compare/v2.1.1...v2.1.2) (2026-11-24)
+
+
+### Documentation
+
+* add README banner and GitHub social preview image ([#23](https://github.com/laurigates/foundryvtt-local-rest-api/issues/23)) ([b845d67](https://github.com/laurigates/foundryvtt-local-rest-api/commit/b845d67abd6901357c5d9c523015a62e612aa55a))
+* slim README and move detail into docs/ pages ([30f7006](https://github.com/laurigates/foundryvtt-local-rest-api/commit/30f7006d9377b60ac18f439f8e081e25fc342b34))
+
+
+### Miscellaneous
+
+* add Biome formatter for JavaScript ([fec059d](https://github.com/laurigates/foundryvtt-local-rest-api/commit/fec059da75edd3bc3305e19dcc90e0dd60cf7e39))
+* add pre-commit, justfile, mise, editorconfig and security policy ([a2b48f3](https://github.com/laurigates/foundryvtt-local-rest-api/commit/a2b48f3233413a01e27be98c199d4d0412996c93))
+* **bridge:** move to Node 24 image and engines &gt;=22.12 ([#35](https://github.com/laurigates/foundryvtt-local-rest-api/issues/35)) ([d273d79](https://github.com/laurigates/foundryvtt-local-rest-api/commit/d273d7997d6558fb484d0cb83e3952d581f76640))
+* **deps:** add Knip dead-code scan with baseline ([ebc1774](https://github.com/laurigates/foundryvtt-local-rest-api/commit/ebc177432300fc9728b01c10f28eaec8875a50b7))
+* **git:** ignore Claude Code runtime state ([a102767](https://github.com/laurigates/foundryvtt-local-rest-api/commit/a102767fa510c57fe7cdb2bb8730e7598b2d7f98))
+* **lint:** add ESLint config block for module tests ([92aa17c](https://github.com/laurigates/foundryvtt-local-rest-api/commit/92aa17ccbfcde997b6674da6183b63650ee410ee))
+* **mcp:** add repo-level .mcp.json with core servers ([cc6bbfd](https://github.com/laurigates/foundryvtt-local-rest-api/commit/cc6bbfde3178cceccc1265ef1aac95780188c60b))
+
 ## [2.1.1](https://github.com/laurigates/foundryvtt-local-rest-api/compare/v2.1.0...v2.1.1) (2026-11-24)
 
 
