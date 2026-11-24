@@ -1,15 +1,10 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-function getGitConfig(key, fallback = '') {
-  try {
-    return execSync(`git config --get ${key}`, { encoding: 'utf8' }).trim();
-  } catch {
-    return fallback;
-  }
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function getGitRemoteInfo() {
   try {
@@ -41,10 +36,41 @@ function getPackageVersion() {
   }
 }
 
+function getPackageAuthor() {
+  try {
+    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const author = packageJson.author;
+    
+    if (typeof author === 'string') {
+      // Parse "Name <email>" or just "Name" format
+      const match = author.match(/^([^<]+)(?:\s*<([^>]+)>)?/);
+      if (match) {
+        return {
+          name: match[1].trim(),
+          email: match[2] || ''
+        };
+      }
+      return { name: author.trim(), email: '' };
+    } else if (typeof author === 'object' && author !== null) {
+      // Handle object format { name: "...", email: "..." }
+      return {
+        name: author.name || '',
+        email: author.email || ''
+      };
+    }
+    
+    return { name: '', email: '' };
+  } catch {
+    console.warn('Could not read package.json author');
+    return { name: '', email: '' };
+  }
+}
+
 function getReplacements() {
   // Get dynamic values
   const gitInfo = getGitRemoteInfo();
   const packageVersion = getPackageVersion();
+  const packageAuthor = getPackageAuthor();
   
   // Define replacement values with fallbacks to placeholder values
   const fullRepoPath = `${gitInfo.username}/${gitInfo.repository}`;
@@ -53,8 +79,8 @@ function getReplacements() {
     GITHUB_USERNAME: process.env.GITHUB_USERNAME || gitInfo.username,
     GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY || fullRepoPath,
     MODULE_VERSION: process.env.MODULE_VERSION || packageVersion,
-    AUTHOR_NAME: process.env.AUTHOR_NAME || getGitConfig('user.name', 'Your Name'),
-    AUTHOR_EMAIL: process.env.AUTHOR_EMAIL || getGitConfig('user.email', 'your.email@example.com')
+    AUTHOR_NAME: process.env.AUTHOR_NAME || packageAuthor.name || 'Your Name',
+    AUTHOR_EMAIL: process.env.AUTHOR_EMAIL || packageAuthor.email || 'your.email@example.com'
   };
 }
 
@@ -92,10 +118,8 @@ function processTemplate() {
   console.log('✓ module.json written to root directory');
 }
 
-module.exports = { processTemplate, processTemplateToString };
-
 // If called directly, process the template
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   try {
     processTemplate();
     console.log('✓ module.json generated successfully');
@@ -104,3 +128,5 @@ if (require.main === module) {
     process.exit(1);
   }
 }
+
+export { processTemplate, processTemplateToString };

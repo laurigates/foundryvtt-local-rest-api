@@ -1,20 +1,20 @@
 # Changelog
 
-## [0.7.0](https://github.com/laurigates/foundryvtt-mcp/compare/foundry-local-rest-api-module-v0.6.0...foundry-local-rest-api-module-v0.7.0) (2025-06-23)
+## [0.7.0](https://github.com/laurigates/foundryvtt-mcp/compare/foundryvtt-local-rest-api-module-v0.6.0...foundryvtt-local-rest-api-module-v0.7.0) (2025-06-23)
 
 
 ### Miscellaneous Chores
 
-* **foundry-local-rest-api-module:** Synchronize containers-moodle versions
+* **foundryvtt-local-rest-api-module:** Synchronize containers-moodle versions
 
-## [0.6.0](https://github.com/laurigates/foundryvtt-mcp/compare/foundry-local-rest-api-module-v0.5.0...foundry-local-rest-api-module-v0.6.0) (2025-06-23)
+## [0.6.0](https://github.com/laurigates/foundryvtt-mcp/compare/foundryvtt-local-rest-api-module-v0.5.0...foundryvtt-local-rest-api-module-v0.6.0) (2025-06-23)
 
 
 ### Features
 
 * Add Foundry Local REST API module ([7f8383a](https://github.com/laurigates/foundryvtt-mcp/commit/7f8383a9b54b3c374d960aad7f97b0b5ecff7d6d))
 * add FoundryVTT v13 compatibility and API key configuration UI ([#20](https://github.com/laurigates/foundryvtt-mcp/issues/20)) ([c61559f](https://github.com/laurigates/foundryvtt-mcp/commit/c61559f758a14f4e1bb0d756b88758c10f120760))
-* **foundry-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))
+* **foundryvtt-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))
 
 
 ### Bug Fixes
@@ -75,7 +75,7 @@
 ### Features
 
 * Add Foundry Local REST API module ([7f8383a](https://github.com/laurigates/foundryvtt-mcp/commit/7f8383a9b54b3c374d960aad7f97b0b5ecff7d6d))
-* **foundry-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))
+* **foundryvtt-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))
 
 
 ### Bug Fixes
@@ -96,7 +96,7 @@
 ### Features
 
 * Add Foundry Local REST API module ([7f8383a](https://github.com/laurigates/foundryvtt-mcp/commit/7f8383a9b54b3c374d960aad7f97b0b5ecff7d6d))
-* **foundry-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))
+* **foundryvtt-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))
 
 
 ### Miscellaneous
@@ -109,4 +109,4 @@
 
 ### Features
 
-* **foundry-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))
+* **foundryvtt-local-rest-api:** add local REST API module for FoundryVTT ([ad8b506](https://github.com/laurigates/foundryvtt-mcp/commit/ad8b5060ca231ffefa389cad1e6c8f68f4a4e069))

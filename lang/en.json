@@ -1,5 +1,5 @@
 {
-  "foundry-local-rest-api": {
+  "foundryvtt-local-rest-api": {
     "settings": {
       "api-key": {
         "name": "API Key",

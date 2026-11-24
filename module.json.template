@@ -1,11 +1,12 @@
 {
-  "id": "foundry-local-rest-api",
+  "id": "foundryvtt-local-rest-api",
   "title": "Foundry Local REST API",
-  "description": "<p>A purely local REST API module for FoundryVTT that provides HTTP endpoints for external integrations without relying on third-party relay services. Enables secure, local-only access to actors, items, scenes, dice rolling, and world data.</p><p><strong>Features:</strong></p><ul><li>Local API key authentication</li><li>Actor and item search endpoints</li><li>Dice rolling API</li><li>Scene and world data access</li><li>No external dependencies</li></ul>",
+  "description": "<p>A secure, local REST API solution for FoundryVTT v13 with enhanced security, permission validation, and Query System support. Works with a companion bridge server to provide HTTP endpoints for external integrations.</p><p><strong>v2.0 Features:</strong></p><ul><li>FoundryVTT v13 Query System for reliable RPC</li><li>Complete permission validation system</li><li>Input sanitization and injection prevention</li><li>Per-user API key support</li><li>Permission-based data filtering</li><li>Enhanced security test coverage</li></ul><p><strong>Architecture:</strong> FoundryVTT Module + Node.js Bridge Server</p><p><strong>Security:</strong> Role-based access control, document-level permissions, comprehensive input validation</p><p><strong>Requires:</strong> FoundryVTT v13+, Companion bridge server (included)</p>",
   "version": "{{MODULE_VERSION}}",
   "compatibility": {
-    "minimum": "11",
-    "verified": "13"
+    "minimum": "13",
+    "verified": "13",
+    "maximum": "13"
   },
   "authors": [
     {
@@ -26,15 +27,16 @@
   ],
   "url": "https://github.com/{{GITHUB_REPOSITORY}}",
   "manifest": "https://github.com/{{GITHUB_REPOSITORY}}/releases/latest/download/module.json",
-  "download": "https://github.com/{{GITHUB_REPOSITORY}}/releases/latest/download/foundry-local-rest-api.zip",
+  "download": "https://github.com/{{GITHUB_REPOSITORY}}/releases/latest/download/foundryvtt-local-rest-api.zip",
   "license": "MIT",
-  "readme": "https://github.com/{{GITHUB_REPOSITORY}}/blob/main/foundry-local-rest-api/README.md",
+  "readme": "https://github.com/{{GITHUB_REPOSITORY}}/blob/main/foundryvtt-local-rest-api/README.md",
   "bugs": "https://github.com/{{GITHUB_REPOSITORY}}/issues",
   "changelog": "https://github.com/{{GITHUB_REPOSITORY}}/releases",
   "media": [
     {
       "type": "icon",
-      "url": "https://raw.githubusercontent.com/{{GITHUB_REPOSITORY}}/main/foundry-local-rest-api/icon.png"
+      "url": "https://raw.githubusercontent.com/{{GITHUB_REPOSITORY}}/main/foundryvtt-local-rest-api/icon.png"
     }
-  ]
+  ],
+  "socket": true
 }
