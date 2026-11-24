@@ -1,6 +1,6 @@
 {
   "name": "foundryvtt-local-rest-api",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A secure local REST API for FoundryVTT v13 with enhanced security, permission validation, and Query System support",
   "main": "scripts/rest-api.js",
   "type": "module",
