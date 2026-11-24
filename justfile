@@ -28,6 +28,10 @@ coverage:
 lint:
     npx eslint scripts bridge-server
 
+# Scan module and bridge server for unused files, exports and dependencies
+knip:
+    npx knip
+
 # Generate module.json from the template
 build:
     npm run build
