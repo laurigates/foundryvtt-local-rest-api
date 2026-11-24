@@ -52,7 +52,16 @@ export default [
     }
   },
   {
-    files: ['bridge-server/tests/**/*.js', 'bridge-server/__mocks__/**/*.js', 'bridge-server/jest.config.js'],
+    // Module tests run under Jest + jsdom and touch Foundry globals
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.browser, ...globals.node, ...globals.jest, ...foundryGlobals }
+    }
+  },
+  {
+    files: ['bridge-server/tests/**/*.js','bridge-server/__mocks__/**/*.js', 'bridge-server/jest.config.js'],
     languageOptions: {
       globals: { ...globals.jest }
     }
