@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { sendModuleRefusal } from '../lib/module-errors.js';
 
 export function createActorsRouter(socketClient) {
   const router = Router();
@@ -23,6 +24,7 @@ export function createActorsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[ActorsRouter] Error searching actors:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       // The module rejects bad input (e.g. limit > 100) with error
       // 'Validation Error'; the socket client puts that in error.code.
       if (error.code === 'Validation Error') {
@@ -55,6 +57,7 @@ export function createActorsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error(`[ActorsRouter] Error getting actor ${req.params.id}:`, error.message);
+      if (sendModuleRefusal(res, error)) return;
       
       // Handle specific errors from FoundryVTT
       if (error.message.includes('Actor not found') || error.message.includes('404')) {

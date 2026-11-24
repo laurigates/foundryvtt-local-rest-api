@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { sendModuleRefusal } from '../lib/module-errors.js';
 
 export function createDiceRouter(socketClient) {
   const router = Router();
@@ -50,6 +51,7 @@ export function createDiceRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[DiceRouter] Error rolling dice:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       
       // Handle specific dice rolling errors. The module rejects a bad formula
       // with error 'Validation Error'; socket-client puts that in error.code

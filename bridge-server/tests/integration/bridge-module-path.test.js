@@ -20,6 +20,10 @@ import { FoundrySocketClient } from '../../lib/socket-client.js';
 import { createActorsRouter } from '../../routes/actors.js';
 import { createDiagnosticsRouter } from '../../routes/diagnostics.js';
 import { createCompendiumRouter } from '../../routes/compendium.js';
+import { createDiceRouter } from '../../routes/dice.js';
+import { createItemsRouter } from '../../routes/items.js';
+import { createScenesRouter } from '../../routes/scenes.js';
+import { createWorldRouter } from '../../routes/world.js';
 import { SocketMessageHandler } from '../../../scripts/socket-handler.js';
 import { SOCKET_NAME, isResponseMessage, responseEmitArgs } from '../../../scripts/socket-routing.js';
 
@@ -90,6 +94,10 @@ function bridgeWithModule() {
   app.use('/api/actors', createActorsRouter(client));
   app.use('/api/diagnostics', createDiagnosticsRouter(client));
   app.use('/api/compendium', createCompendiumRouter(client));
+  app.use('/api/items', createItemsRouter(client));
+  app.use('/api/dice', createDiceRouter(client));
+  app.use('/api/scenes', createScenesRouter(client));
+  app.use('/api/world', createWorldRouter(client));
   return { app, client, moduleHandler };
 }
 
@@ -185,6 +193,59 @@ describe('bridge to module path', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.timeframe).toBe('600 seconds');
+    });
+  });
+
+  describe('refusals from the module (#16)', () => {
+    beforeEach(() => {
+      moduleHandler.handlers.diagnostics.logBuffer = [
+        { timestamp: new Date().toISOString(), level: 'error', message: 'TypeError: x', source: 'unknown', stack: 'at y' }
+      ];
+    });
+
+    // A Player answering the request: below Trusted (health) and Assistant
+    // (logs, search, errors). The actor's ownership grants that user nothing.
+    test.each([
+      ['/api/diagnostics/logs', {}],
+      ['/api/diagnostics/search', { pattern: '.' }],
+      ['/api/diagnostics/errors', { timeframe: 3600 }],
+      ['/api/diagnostics/health', {}],
+      ['/api/actors/orc0000000000001', {}]
+    ])('GET %s answers 403 to a Player', async (path, query) => {
+      globalThis.game.user = { id: 'player000000001', name: 'Player', role: 1, isGM: false };
+
+      const res = await request(app).get(path).query(query);
+
+      expect(res.status).toBe(403);
+      expect(res.body).toMatchObject({ success: false, error: 'Forbidden' });
+      expect(JSON.stringify(res.body)).not.toContain('TypeError');
+    });
+
+    // Every forwarding route: the module checks the key before anything else.
+    test.each([
+      ['get', '/api/actors'],
+      ['get', '/api/actors/orc0000000000001'],
+      ['get', '/api/items'],
+      ['get', '/api/items/item000000000001'],
+      ['get', '/api/scenes'],
+      ['get', '/api/scenes/current'],
+      ['get', '/api/scenes/scene00000000001'],
+      ['get', '/api/world'],
+      ['post', '/api/dice/roll'],
+      ['get', '/api/diagnostics/logs'],
+      ['get', '/api/diagnostics/search'],
+      ['get', '/api/diagnostics/health'],
+      ['get', '/api/diagnostics/errors'],
+      ['get', '/api/compendium/search']
+    ])('%s %s answers 401 when the module rejects the API key', async (method, path) => {
+      moduleHandler.setApiKey('a-different-key');
+
+      const res = method === 'post'
+        ? await request(app).post(path).send({ formula: '1d20' })
+        : await request(app).get(path);
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({ success: false, error: 'Unauthorized' });
     });
   });
 

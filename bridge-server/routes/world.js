@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { sendModuleRefusal } from '../lib/module-errors.js';
 
 export function createWorldRouter(socketClient) {
   const router = Router();
@@ -22,6 +23,7 @@ export function createWorldRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[WorldRouter] Error getting world info:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',

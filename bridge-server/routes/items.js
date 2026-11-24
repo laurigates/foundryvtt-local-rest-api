@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { sendModuleRefusal } from '../lib/module-errors.js';
 
 export function createItemsRouter(socketClient) {
   const router = Router();
@@ -23,6 +24,7 @@ export function createItemsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[ItemsRouter] Error searching items:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
@@ -46,6 +48,7 @@ export function createItemsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error(`[ItemsRouter] Error getting item ${req.params.id}:`, error.message);
+      if (sendModuleRefusal(res, error)) return;
       
       // Handle specific errors from FoundryVTT
       if (error.message.includes('Item not found') || error.message.includes('404')) {

@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { sendModuleRefusal } from '../lib/module-errors.js';
 
 export function createCompendiumRouter(socketClient) {
   const router = Router();
@@ -23,6 +24,7 @@ export function createCompendiumRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[CompendiumRouter] Error searching compendiums:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       // The module rejects bad input with error 'Validation Error'; the
       // socket client puts that in error.code.
       if (error.code === 'Validation Error') {
