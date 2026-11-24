@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.0](https://github.com/laurigates/foundryvtt-local-rest-api/compare/v2.0.0...v2.1.0) (2026-11-24)
+
+
+### Features
+
+* port the module and bridge server to FoundryVTT v14 ([#4](https://github.com/laurigates/foundryvtt-local-rest-api/issues/4)) ([7ba20e6](https://github.com/laurigates/foundryvtt-local-rest-api/commit/7ba20e6d373c8158c69662e0531ded9f2767ab67))
+* release-please workflow, ADRs and production deployment guide ([#7](https://github.com/laurigates/foundryvtt-local-rest-api/issues/7)) ([e3cc7ae](https://github.com/laurigates/foundryvtt-local-rest-api/commit/e3cc7ae61a78569374c7f6117af59beedef15c93))
+
+
+### Miscellaneous
+
+* commit the bridge-server work-in-progress ([#3](https://github.com/laurigates/foundryvtt-local-rest-api/issues/3)) ([ba714a5](https://github.com/laurigates/foundryvtt-local-rest-api/commit/ba714a567ec7a84d967c59d270762dd85603ce7a))
+
 ## [0.7.0](https://github.com/laurigates/foundryvtt-mcp/compare/foundryvtt-local-rest-api-module-v0.6.0...foundryvtt-local-rest-api-module-v0.7.0) (2025-06-23)
 
 
