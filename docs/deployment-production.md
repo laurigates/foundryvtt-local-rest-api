@@ -69,7 +69,8 @@ browser console) can go in `FOUNDRY_USER_ID` to skip the name lookup at login.
 The bridge runs no module code. Each request is answered by the designated
 active Gamemaster's browser, so **a GM must be logged in through a browser
 with the world open** for the API to answer. With no GM connected, requests
-time out after `REQUEST_TIMEOUT` (default 10 s).
+time out after `REQUEST_TIMEOUT` milliseconds: 5000 unless set
+(`bridge-server/server.js`); the example below sets 10000.
 
 For an always-on API this means a browser session that stays open, for
 example on the machine that runs Foundry or the MCP. A browser logged in as
@@ -160,13 +161,20 @@ client (derived dnd5e values, compendium search, logs).
 | `FOUNDRY_URL` | Foundry's URL, as for Socket.IO mode |
 | `FOUNDRY_USERNAME`, `FOUNDRY_PASSWORD` | The MCP's own world user, as today |
 | `FOUNDRY_API_KEY` | The module's API key, same as the bridge's `API_KEY` |
-| Bridge URL | **Pending.** The MCP change that adds a separate bridge URL is in flight, and its branch (`feat/dual-transport`) is not on GitHub yet, so the variable name is not settled. |
+| `FOUNDRY_REST_URL` | The bridge's base URL, e.g. `http://127.0.0.1:3030` |
+
+`FOUNDRY_REST_URL` comes from
+[foundryvtt-mcp#330](https://github.com/laurigates/foundryvtt-mcp/pull/330)
+(its ADR-0011), which is not merged or released yet. With the API key, the
+REST URL and Socket.IO credentials set, that change runs in dual mode; with the
+key and credentials but no `FOUNDRY_REST_URL`, it stays in the deprecated
+REST-only mode and treats `FOUNDRY_URL` as the bridge.
 
 Today's released MCP has one base URL: with `FOUNDRY_API_KEY` set, it sends
 its REST-capable calls to `FOUNDRY_URL` (its `client.ts` picks the transport
 per call from `apiKey`), so it cannot reach Foundry and the bridge at
-different addresses until that change ships. Its REST client also needs to map this API's
-response shape (foundryvtt-mcp#310, ADR-0003).
+different addresses until #330 ships. #330 also maps this API's response
+shape (foundryvtt-mcp#310, ADR-0003).
 
 ## Security caveats
 
