@@ -9,11 +9,11 @@ const __dirname = path.dirname(__filename);
 function getGitRemoteInfo() {
   try {
     const remoteUrl = execSync('git config --get remote.origin.url', { encoding: 'utf8' }).trim();
-    
+
     // Parse GitHub URL (supports both SSH and HTTPS formats)
     const sshMatch = remoteUrl.match(/git@github\.com:(.+?)\/(.+?)(?:\.git)?$/);
     const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/(.+?)\/(.+?)(?:\.git)?$/);
-    
+
     if (sshMatch) {
       return { username: sshMatch[1], repository: sshMatch[2] };
     } else if (httpsMatch) {
@@ -22,13 +22,15 @@ function getGitRemoteInfo() {
   } catch {
     console.warn('Could not parse git remote URL');
   }
-  
+
   return { username: 'yourusername', repository: 'foundryvtt-local-rest-api' };
 }
 
 function getPackageVersion() {
   try {
-    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
+    );
     return packageJson.version || '0.9.2';
   } catch {
     console.warn('Could not read package.json version');
@@ -38,9 +40,11 @@ function getPackageVersion() {
 
 function getPackageAuthor() {
   try {
-    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
+    );
     const author = packageJson.author;
-    
+
     if (typeof author === 'string') {
       // Parse "Name <email>" or just "Name" format
       const match = author.match(/^([^<]+)(?:\s*<([^>]+)>)?/);
@@ -58,7 +62,7 @@ function getPackageAuthor() {
         email: author.email || ''
       };
     }
-    
+
     return { name: '', email: '' };
   } catch {
     console.warn('Could not read package.json author');
@@ -71,10 +75,10 @@ function getReplacements() {
   const gitInfo = getGitRemoteInfo();
   const packageVersion = getPackageVersion();
   const packageAuthor = getPackageAuthor();
-  
+
   // Define replacement values with fallbacks to placeholder values
   const fullRepoPath = `${gitInfo.username}/${gitInfo.repository}`;
-  
+
   return {
     GITHUB_USERNAME: process.env.GITHUB_USERNAME || gitInfo.username,
     GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY || fullRepoPath,
@@ -87,25 +91,25 @@ function getReplacements() {
 
 function processTemplateToString() {
   const templatePath = path.join(__dirname, '..', 'module.json.template');
-  
+
   if (!fs.existsSync(templatePath)) {
     throw new Error('module.json.template not found');
   }
-  
+
   let template = fs.readFileSync(templatePath, 'utf8');
   const replacements = getReplacements();
-  
+
   // Replace all placeholders
   Object.entries(replacements).forEach(([key, value]) => {
     const placeholder = new RegExp(`{{${key}}}`, 'g');
     template = template.replace(placeholder, value);
   });
-  
+
   console.log('Generated module.json with the following values:');
   Object.entries(replacements).forEach(([key, value]) => {
     console.log(`  ${key}: ${value}`);
   });
-  
+
   return dropEmptyAuthorEmails(template);
 }
 
@@ -126,10 +130,10 @@ function dropEmptyAuthorEmails(json) {
 function processTemplate() {
   const outputPath = path.join(__dirname, '..', 'module.json');
   const template = processTemplateToString();
-  
+
   // Write processed template
   fs.writeFileSync(outputPath, template, 'utf8');
-  
+
   console.log('✓ module.json written to root directory');
 }
 

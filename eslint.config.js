@@ -61,7 +61,11 @@ export default [
     }
   },
   {
-    files: ['bridge-server/tests/**/*.js','bridge-server/__mocks__/**/*.js', 'bridge-server/jest.config.js'],
+    files: [
+      'bridge-server/tests/**/*.js',
+      'bridge-server/__mocks__/**/*.js',
+      'bridge-server/jest.config.js'
+    ],
     languageOptions: {
       globals: { ...globals.jest }
     }

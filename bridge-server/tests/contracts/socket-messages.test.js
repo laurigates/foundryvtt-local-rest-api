@@ -4,7 +4,6 @@
  */
 
 describe('Socket Message Contract', () => {
-  
   describe('Request Message Format', () => {
     const validRequestMessage = {
       type: 'actors.search',
@@ -18,14 +17,14 @@ describe('Socket Message Contract', () => {
       },
       body: null
     };
-    
+
     test('should have required fields', () => {
       expect(validRequestMessage).toHaveProperty('type');
       expect(validRequestMessage).toHaveProperty('requestId');
       expect(validRequestMessage).toHaveProperty('auth');
       expect(validRequestMessage).toHaveProperty('params');
     });
-    
+
     test('type field should follow category.action format', () => {
       const validTypes = [
         'actors.search',
@@ -39,44 +38,43 @@ describe('Socket Message Contract', () => {
         'world.info',
         'status'
       ];
-      
-      validTypes.forEach(type => {
+
+      validTypes.forEach((type) => {
         if (type !== 'status') {
           expect(type).toMatch(/^[a-z]+\.[a-z]+$/);
         }
       });
     });
-    
+
     test('requestId should be unique identifier', () => {
       expect(validRequestMessage.requestId).toMatch(/^req_\d+_\d+$/);
     });
-    
+
     test('auth should contain apiKey', () => {
       expect(validRequestMessage.auth).toHaveProperty('apiKey');
       expect(typeof validRequestMessage.auth.apiKey).toBe('string');
     });
-    
+
     test('params should contain query and params objects', () => {
       expect(validRequestMessage.params).toHaveProperty('query');
       expect(validRequestMessage.params).toHaveProperty('params');
       expect(typeof validRequestMessage.params.query).toBe('object');
       expect(typeof validRequestMessage.params.params).toBe('object');
     });
-    
+
     test('body can be null or object for POST requests', () => {
       const postMessage = {
         ...validRequestMessage,
         type: 'dice.roll',
         body: { formula: '1d20+5', flavor: 'Attack roll' }
       };
-      
+
       expect(postMessage.body).toBeDefined();
       expect(typeof postMessage.body).toBe('object');
     });
   });
-  
+
   describe('Response Message Format', () => {
-    
     describe('Success Response', () => {
       const successResponse = {
         requestId: 'req_123_1234567890',
@@ -88,28 +86,28 @@ describe('Socket Message Contract', () => {
           ]
         }
       };
-      
+
       test('should have required fields', () => {
         expect(successResponse).toHaveProperty('requestId');
         expect(successResponse).toHaveProperty('success');
         expect(successResponse).toHaveProperty('data');
       });
-      
+
       test('success should be true', () => {
         expect(successResponse.success).toBe(true);
       });
-      
+
       test('should not have error fields', () => {
         expect(successResponse).not.toHaveProperty('error');
         expect(successResponse).not.toHaveProperty('message');
       });
-      
+
       test('data should be present and valid', () => {
         expect(successResponse.data).toBeDefined();
         expect(successResponse.data).not.toBeNull();
       });
     });
-    
+
     describe('Error Response', () => {
       const errorResponse = {
         requestId: 'req_123_1234567890',
@@ -117,22 +115,22 @@ describe('Socket Message Contract', () => {
         error: 'NotFound',
         message: 'Actor not found with ID: invalid-id'
       };
-      
+
       test('should have required fields', () => {
         expect(errorResponse).toHaveProperty('requestId');
         expect(errorResponse).toHaveProperty('success');
         expect(errorResponse).toHaveProperty('error');
         expect(errorResponse).toHaveProperty('message');
       });
-      
+
       test('success should be false', () => {
         expect(errorResponse.success).toBe(false);
       });
-      
+
       test('should not have data field', () => {
         expect(errorResponse).not.toHaveProperty('data');
       });
-      
+
       test('error should be a valid error type', () => {
         const validErrorTypes = [
           'Unauthorized',
@@ -142,17 +140,17 @@ describe('Socket Message Contract', () => {
           'Timeout',
           'ValidationError'
         ];
-        
+
         expect(validErrorTypes).toContain(errorResponse.error);
       });
-      
+
       test('message should be descriptive', () => {
         expect(typeof errorResponse.message).toBe('string');
         expect(errorResponse.message.length).toBeGreaterThan(0);
       });
     });
   });
-  
+
   describe('Endpoint to Message Type Mapping', () => {
     const endpointMappings = [
       { endpoint: 'GET /api/actors', type: 'actors.search' },
@@ -166,18 +164,14 @@ describe('Socket Message Contract', () => {
       { endpoint: 'GET /api/world', type: 'world.info' },
       { endpoint: 'GET /api/status', type: 'status' }
     ];
-    
-    test.each(endpointMappings)(
-      '$endpoint should map to $type',
-      ({ endpoint, type }) => {
-        expect(type).toBeTruthy();
-        expect(typeof type).toBe('string');
-      }
-    );
+
+    test.each(endpointMappings)('$endpoint should map to $type', ({ endpoint, type }) => {
+      expect(type).toBeTruthy();
+      expect(typeof type).toBe('string');
+    });
   });
-  
+
   describe('Parameter Validation', () => {
-    
     test('search parameters should be in query object', () => {
       const searchMessage = {
         type: 'actors.search',
@@ -191,12 +185,12 @@ describe('Socket Message Contract', () => {
           params: {}
         }
       };
-      
+
       expect(searchMessage.params.query).toBeDefined();
       expect(searchMessage.params.query.type).toBe('character');
       expect(searchMessage.params.query.limit).toBe(10);
     });
-    
+
     test('route parameters should be in params object', () => {
       const getMessage = {
         type: 'actors.get',
@@ -207,11 +201,11 @@ describe('Socket Message Contract', () => {
           }
         }
       };
-      
+
       expect(getMessage.params.params).toBeDefined();
       expect(getMessage.params.params.id).toBe('actor123');
     });
-    
+
     test('POST body should be in body field', () => {
       const postMessage = {
         type: 'dice.roll',
@@ -221,14 +215,13 @@ describe('Socket Message Contract', () => {
           whisper: []
         }
       };
-      
+
       expect(postMessage.body).toBeDefined();
       expect(postMessage.body.formula).toBe('1d20+5');
     });
   });
-  
+
   describe('Data Type Contracts', () => {
-    
     test('Actor data structure', () => {
       const actorData = {
         id: 'actor123',
@@ -241,13 +234,13 @@ describe('Socket Message Contract', () => {
           }
         }
       };
-      
+
       expect(actorData).toHaveProperty('id');
       expect(actorData).toHaveProperty('name');
       expect(actorData).toHaveProperty('type');
       expect(actorData).toHaveProperty('system');
     });
-    
+
     test('Item data structure', () => {
       const itemData = {
         id: 'item456',
@@ -259,13 +252,13 @@ describe('Socket Message Contract', () => {
           rarity: 'common'
         }
       };
-      
+
       expect(itemData).toHaveProperty('id');
       expect(itemData).toHaveProperty('name');
       expect(itemData).toHaveProperty('type');
       expect(itemData).toHaveProperty('system');
     });
-    
+
     test('Scene data structure', () => {
       const sceneData = {
         id: 'scene789',
@@ -279,13 +272,13 @@ describe('Socket Message Contract', () => {
           size: 100
         }
       };
-      
+
       expect(sceneData).toHaveProperty('id');
       expect(sceneData).toHaveProperty('name');
       expect(sceneData).toHaveProperty('active');
       expect(typeof sceneData.active).toBe('boolean');
     });
-    
+
     test('Dice roll result structure', () => {
       const rollResult = {
         formula: '1d20+5',
@@ -294,13 +287,13 @@ describe('Socket Message Contract', () => {
         flavor: 'Attack roll',
         messageId: 'msg123'
       };
-      
+
       expect(rollResult).toHaveProperty('formula');
       expect(rollResult).toHaveProperty('total');
       expect(typeof rollResult.total).toBe('number');
       expect(Array.isArray(rollResult.results)).toBe(true);
     });
-    
+
     test('World info structure', () => {
       const worldInfo = {
         title: 'My World',
@@ -317,7 +310,7 @@ describe('Socket Message Contract', () => {
           users: 5
         }
       };
-      
+
       expect(worldInfo).toHaveProperty('title');
       expect(worldInfo).toHaveProperty('system');
       expect(worldInfo).toHaveProperty('version');
@@ -325,9 +318,8 @@ describe('Socket Message Contract', () => {
       expect(typeof worldInfo.stats.actors).toBe('number');
     });
   });
-  
+
   describe('Error Scenarios Contract', () => {
-    
     test('Authentication failure response', () => {
       const authError = {
         requestId: 'req_123',
@@ -335,11 +327,11 @@ describe('Socket Message Contract', () => {
         error: 'Unauthorized',
         message: 'Valid API key required'
       };
-      
+
       expect(authError.error).toBe('Unauthorized');
       expect(authError.message).toContain('API key');
     });
-    
+
     test('Not found response', () => {
       const notFoundError = {
         requestId: 'req_124',
@@ -347,11 +339,11 @@ describe('Socket Message Contract', () => {
         error: 'NotFound',
         message: 'Actor not found with ID: nonexistent'
       };
-      
+
       expect(notFoundError.error).toBe('NotFound');
       expect(notFoundError.message).toContain('not found');
     });
-    
+
     test('Validation error response', () => {
       const validationError = {
         requestId: 'req_125',
@@ -359,11 +351,11 @@ describe('Socket Message Contract', () => {
         error: 'ValidationError',
         message: 'Invalid dice formula: not-a-formula'
       };
-      
+
       expect(validationError.error).toBe('ValidationError');
       expect(validationError.message).toContain('Invalid');
     });
-    
+
     test('Timeout error response', () => {
       const timeoutError = {
         requestId: 'req_126',
@@ -371,7 +363,7 @@ describe('Socket Message Contract', () => {
         error: 'Timeout',
         message: 'Request timeout after 5000ms'
       };
-      
+
       expect(timeoutError.error).toBe('Timeout');
       expect(timeoutError.message).toContain('timeout');
     });

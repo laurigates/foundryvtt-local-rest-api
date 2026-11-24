@@ -43,7 +43,7 @@ export class AuthManager {
     if (!this.validateApiKey(providedKey)) {
       return res.status(401).json({
         success: false,
-        error: 'Unauthorized', 
+        error: 'Unauthorized',
         message: 'Valid API key required'
       });
     }
@@ -59,7 +59,7 @@ export class AuthManager {
   extractApiKey(req) {
     // Try x-api-key header first
     let apiKey = req.headers['x-api-key'];
-    
+
     if (!apiKey) {
       // Try Authorization header with Bearer token
       const authHeader = req.headers['authorization'];
@@ -99,7 +99,7 @@ export class AuthManager {
 
     return result === 0;
   }
-  
+
   /**
    * Alias for constantTimeEquals for test compatibility
    */
@@ -114,12 +114,16 @@ export class AuthManager {
     if (!this.apiKey) {
       return null;
     }
-    
+
     // Return first 8 and last 4 characters with asterisks
     if (this.apiKey.length <= 12) {
       return '*'.repeat(this.apiKey.length);
     }
-    
-    return this.apiKey.substring(0, 8) + '*'.repeat(this.apiKey.length - 12) + this.apiKey.substring(this.apiKey.length - 4);
+
+    return (
+      this.apiKey.substring(0, 8) +
+      '*'.repeat(this.apiKey.length - 12) +
+      this.apiKey.substring(this.apiKey.length - 4)
+    );
   }
 }

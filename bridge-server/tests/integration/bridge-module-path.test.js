@@ -25,13 +25,28 @@ import { createItemsRouter } from '../../routes/items.js';
 import { createScenesRouter } from '../../routes/scenes.js';
 import { createWorldRouter } from '../../routes/world.js';
 import { SocketMessageHandler } from '../../../scripts/socket-handler.js';
-import { SOCKET_NAME, isResponseMessage, responseEmitArgs } from '../../../scripts/socket-routing.js';
+import {
+  SOCKET_NAME,
+  isResponseMessage,
+  responseEmitArgs
+} from '../../../scripts/socket-routing.js';
 import { listenLoopback, close } from '../helpers/loopback.js';
 
 const API_KEY = 'test-api-key-bridge-module';
 
 function actor(id, name, type) {
-  return { id, name, type, img: `${id}.webp`, ownership: {}, system: {}, hasPlayerOwner: false, folder: null, items: new Map(), effects: [] };
+  return {
+    id,
+    name,
+    type,
+    img: `${id}.webp`,
+    ownership: {},
+    system: {},
+    hasPlayerOwner: false,
+    folder: null,
+    items: new Map(),
+    effects: []
+  };
 }
 
 function pack(collection, documentName, entries) {
@@ -40,7 +55,7 @@ function pack(collection, documentName, entries) {
     documentName,
     visible: true,
     metadata: { id: collection, label: collection, type: documentName },
-    getIndex: async () => new Map(entries.map(e => [e._id, e]))
+    getIndex: async () => new Map(entries.map((e) => [e._id, e]))
   };
 }
 
@@ -60,10 +75,25 @@ function installGame() {
     ]),
     items: new Map(),
     packs: new Map([
-      ['dnd5e.spells', pack('dnd5e.spells', 'Item', [
-        { _id: 'fireball00000001', name: 'Fireball', type: 'spell', img: 'fireball.webp', system: { level: 3, school: 'evo' } },
-        { _id: 'shield0000000001', name: 'Shield', type: 'spell', img: 'shield.webp', system: { level: 1, school: 'abj' } }
-      ])]
+      [
+        'dnd5e.spells',
+        pack('dnd5e.spells', 'Item', [
+          {
+            _id: 'fireball00000001',
+            name: 'Fireball',
+            type: 'spell',
+            img: 'fireball.webp',
+            system: { level: 3, school: 'evo' }
+          },
+          {
+            _id: 'shield0000000001',
+            name: 'Shield',
+            type: 'spell',
+            img: 'shield.webp',
+            system: { level: 1, school: 'abj' }
+          }
+        ])
+      ]
     ])
   };
 }
@@ -84,14 +114,21 @@ function bridgeWithModule() {
     socket.emit(event, payload);
   });
 
-  const client = new FoundrySocketClient({ foundryUrl: 'http://fvtt:30000', apiKey: API_KEY, requestTimeout: 1000 });
+  const client = new FoundrySocketClient({
+    foundryUrl: 'http://fvtt:30000',
+    apiKey: API_KEY,
+    requestTimeout: 1000
+  });
   client.socket = socket;
   client.isConnected = true;
   client.setupEventHandlers();
 
   const app = express();
   app.use(express.json());
-  app.use('/api', (req, res, next) => { req.apiKey = API_KEY; next(); });
+  app.use('/api', (req, res, next) => {
+    req.apiKey = API_KEY;
+    next();
+  });
   app.use('/api/actors', createActorsRouter(client));
   app.use('/api/diagnostics', createDiagnosticsRouter(client));
   app.use('/api/compendium', createCompendiumRouter(client));
@@ -138,7 +175,7 @@ describe('bridge to module path', () => {
     test('GET /api/actors applies query and limit', async () => {
       const byName = await request(server).get('/api/actors').query({ query: 'goblin' });
       expect(byName.status).toBe(200);
-      expect(byName.body.data.map(a => a.name)).toEqual(['Goblin', 'Goblin Boss']);
+      expect(byName.body.data.map((a) => a.name)).toEqual(['Goblin', 'Goblin Boss']);
       expect(byName.body.total).toBe(2);
 
       const limited = await request(server).get('/api/actors').query({ limit: 1 });
@@ -156,12 +193,19 @@ describe('bridge to module path', () => {
   describe('diagnostics (#6)', () => {
     test('GET /api/diagnostics/logs returns captured log entries', async () => {
       moduleHandler.handlers.diagnostics.logBuffer = [
-        { timestamp: new Date().toISOString(), level: 'warn', message: 'low disk', source: 'unknown' }
+        {
+          timestamp: new Date().toISOString(),
+          level: 'warn',
+          message: 'low disk',
+          source: 'unknown'
+        }
       ];
 
       // The module captures console output, the bridge's own included (one
       // process here), so filter on the level of the seeded entry.
-      const res = await request(server).get('/api/diagnostics/logs').query({ lines: 10, level: 'warn' });
+      const res = await request(server)
+        .get('/api/diagnostics/logs')
+        .query({ lines: 10, level: 'warn' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -172,11 +216,18 @@ describe('bridge to module path', () => {
 
     test('GET /api/diagnostics/search forwards the pattern', async () => {
       moduleHandler.handlers.diagnostics.logBuffer = [
-        { timestamp: new Date().toISOString(), level: 'error', message: 'TypeError: x', source: 'unknown' },
+        {
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: 'TypeError: x',
+          source: 'unknown'
+        },
         { timestamp: new Date().toISOString(), level: 'log', message: 'fine', source: 'unknown' }
       ];
 
-      const res = await request(server).get('/api/diagnostics/search').query({ pattern: 'TypeError' });
+      const res = await request(server)
+        .get('/api/diagnostics/search')
+        .query({ pattern: 'TypeError' });
 
       expect(res.status).toBe(200);
       expect(res.body.data).toMatchObject({ matches: 1, pattern: 'TypeError' });
@@ -203,7 +254,13 @@ describe('bridge to module path', () => {
   describe('refusals from the module (#16)', () => {
     beforeEach(() => {
       moduleHandler.handlers.diagnostics.logBuffer = [
-        { timestamp: new Date().toISOString(), level: 'error', message: 'TypeError: x', source: 'unknown', stack: 'at y' }
+        {
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: 'TypeError: x',
+          source: 'unknown',
+          stack: 'at y'
+        }
       ];
     });
 
@@ -244,9 +301,10 @@ describe('bridge to module path', () => {
     ])('%s %s answers 401 when the module rejects the API key', async (method, path) => {
       moduleHandler.setApiKey('a-different-key');
 
-      const res = method === 'post'
-        ? await request(server).post(path).send({ formula: '1d20' })
-        : await request(server).get(path);
+      const res =
+        method === 'post'
+          ? await request(server).post(path).send({ formula: '1d20' })
+          : await request(server).get(path);
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({ success: false, error: 'Unauthorized' });
@@ -255,16 +313,23 @@ describe('bridge to module path', () => {
 
   describe('compendium (#6)', () => {
     test('GET /api/compendium/search returns matching index entries', async () => {
-      const res = await request(server).get('/api/compendium/search')
+      const res = await request(server)
+        .get('/api/compendium/search')
         .query({ query: 'fire', limit: 20, offset: 0 });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         success: true,
-        data: [{
-          compendiumId: 'dnd5e.spells', itemId: 'fireball00000001', name: 'Fireball',
-          type: 'spell', img: 'fireball.webp', system: { level: 3, school: 'evo' }
-        }],
+        data: [
+          {
+            compendiumId: 'dnd5e.spells',
+            itemId: 'fireball00000001',
+            name: 'Fireball',
+            type: 'spell',
+            img: 'fireball.webp',
+            system: { level: 3, school: 'evo' }
+          }
+        ],
         total: 1,
         query: { query: 'fire', limit: 20, offset: 0 }
       });

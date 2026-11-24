@@ -37,7 +37,7 @@ export function foundryOrigin(foundryUrl) {
  * @returns {string|null}
  */
 export function extractSessionCookie(setCookie) {
-  const values = Array.isArray(setCookie) ? setCookie : (setCookie ? [setCookie] : []);
+  const values = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
   for (const value of values) {
     const match = /(?:^|[;,\s])session=([^;]+)/.exec(value);
     if (match) return match[1];
@@ -91,7 +91,9 @@ export class FoundryAuthenticator extends EventEmitter {
         headers: { 'User-Agent': USER_AGENT, Origin: origin },
         redirect: 'manual'
       });
-      const session = extractSessionCookie(joinPage.headers.raw?.()['set-cookie'] ?? joinPage.headers.get('set-cookie'));
+      const session = extractSessionCookie(
+        joinPage.headers.raw?.()['set-cookie'] ?? joinPage.headers.get('set-cookie')
+      );
       if (!session) {
         throw new Error(`No session cookie returned from GET /join (HTTP ${joinPage.status})`);
       }
@@ -115,10 +117,15 @@ export class FoundryAuthenticator extends EventEmitter {
 
       const text = await loginResponse.text();
       let body = null;
-      try { body = JSON.parse(text); } catch { /* plain-text error key */ }
+      try {
+        body = JSON.parse(text);
+      } catch {
+        /* plain-text error key */
+      }
 
       if (loginResponse.status !== 200 || body?.status !== 'success') {
-        const reason = (body && (body.message || body.error)) || text.trim().slice(0, 100) || 'no response body';
+        const reason =
+          (body && (body.message || body.error)) || text.trim().slice(0, 100) || 'no response body';
         throw new Error(`Login failed (HTTP ${loginResponse.status}): ${reason}`);
       }
 
@@ -170,7 +177,11 @@ export class FoundryAuthenticator extends EventEmitter {
       );
 
       socket.once('connect_error', (err) =>
-        finish(reject, new Error(`Socket connection failed while resolving user id: ${err.message}`)));
+        finish(
+          reject,
+          new Error(`Socket connection failed while resolving user id: ${err.message}`)
+        )
+      );
 
       // The server emits `session` once it has read the handshake session.
       socket.once('session', () => {
@@ -178,8 +189,11 @@ export class FoundryAuthenticator extends EventEmitter {
           const users = Array.isArray(data?.users) ? data.users : null;
           if (!users) return finish(reject, new Error('getJoinData returned no users'));
           const wanted = this.username.toLowerCase();
-          const found = users.find((u) => typeof u?.name === 'string' && u.name.toLowerCase() === wanted);
-          if (!found) return finish(reject, new Error(`User "${this.username}" not found in this world`));
+          const found = users.find(
+            (u) => typeof u?.name === 'string' && u.name.toLowerCase() === wanted
+          );
+          if (!found)
+            return finish(reject, new Error(`User "${this.username}" not found in this world`));
           finish(resolve, found._id);
         });
       });
@@ -198,14 +212,14 @@ export class FoundryAuthenticator extends EventEmitter {
       // Try to get user info from the game page
       const response = await this.fetch(`${this.foundryUrl}/game`, {
         headers: {
-          'Cookie': this.sessionCookie,
+          Cookie: this.sessionCookie,
           'User-Agent': 'FoundryVTT-Bridge-Server/1.0'
         }
       });
 
       if (response.ok) {
         const html = await response.text();
-        
+
         // Extract user ID from the HTML/JavaScript
         const userIdMatch = html.match(/userId['"]\s*[:=]\s*['"]([^'"]+)['"]/);
         if (userIdMatch) {
@@ -247,7 +261,7 @@ export class FoundryAuthenticator extends EventEmitter {
     try {
       const response = await this.fetch(`${this.foundryUrl}/api/status`, {
         headers: {
-          'Cookie': this.sessionCookie
+          Cookie: this.sessionCookie
         }
       });
 
@@ -270,7 +284,7 @@ export class FoundryAuthenticator extends EventEmitter {
       await this.fetch(`${this.foundryUrl}/logout`, {
         method: 'POST',
         headers: {
-          'Cookie': this.sessionCookie,
+          Cookie: this.sessionCookie,
           Origin: foundryOrigin(this.foundryUrl)
         }
       });
@@ -278,7 +292,7 @@ export class FoundryAuthenticator extends EventEmitter {
       this.sessionCookie = null;
       this.userId = null;
       this.isAuthenticated = false;
-      
+
       console.log('[FoundryAuth] Logged out successfully');
     } catch (error) {
       console.error('[FoundryAuth] Logout error:', error.message);

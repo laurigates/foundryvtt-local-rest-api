@@ -49,7 +49,7 @@ export function createItemsRouter(socketClient) {
     } catch (error) {
       console.error(`[ItemsRouter] Error getting item ${req.params.id}:`, error.message);
       if (sendModuleRefusal(res, error)) return;
-      
+
       // Handle specific errors from FoundryVTT
       if (error.message.includes('Item not found') || error.message.includes('404')) {
         res.status(404).json({

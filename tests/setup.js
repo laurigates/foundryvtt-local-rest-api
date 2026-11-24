@@ -115,7 +115,7 @@ global.Roll = class Roll {
     this.dice = [];
     this.terms = [];
   }
-  
+
   // Roll#evaluate is the API the module calls; roll() is kept for older tests
   async evaluate() {
     return this.roll();
@@ -126,7 +126,7 @@ global.Roll = class Roll {
     this.total = Math.floor(Math.random() * 20) + 1;
     return this;
   }
-  
+
   async toMessage(options = {}) {
     return {
       id: 'mock-message-id',
@@ -152,7 +152,7 @@ global.FormApplication = class FormApplication {
     this.object = object;
     this.options = options;
   }
-  
+
   static get defaultOptions() {
     return {
       classes: ['form'],
@@ -160,11 +160,11 @@ global.FormApplication = class FormApplication {
       height: 'auto'
     };
   }
-  
+
   render(force = false) {
     return this;
   }
-  
+
   close() {
     return Promise.resolve();
   }
@@ -183,7 +183,7 @@ global.mockFoundryData = {
     },
     ...overrides
   }),
-  
+
   createItem: (overrides = {}) => ({
     id: 'item-' + Math.random().toString(36).substring(7),
     name: 'Test Item',
@@ -194,7 +194,7 @@ global.mockFoundryData = {
     },
     ...overrides
   }),
-  
+
   createScene: (overrides = {}) => ({
     id: 'scene-' + Math.random().toString(36).substring(7),
     name: 'Test Scene',

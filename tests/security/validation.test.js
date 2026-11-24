@@ -28,7 +28,7 @@ describe('Input Validation Security', () => {
     // with a capturing wrapper that forwards to the previous function, so
     // keep a handle on the spy rather than reading console.error afterwards.
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     // Initialize handlers
     socketHandler = new SocketMessageHandler();
     socketHandler.setApiKey('test-api-key');
@@ -54,7 +54,7 @@ describe('Input Validation Security', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should not cause errors, should sanitize
         // Search payloads are the route's {success, data} object inside the
         // socket envelope, so the result list is response.data.data.
@@ -80,14 +80,14 @@ describe('Input Validation Security', () => {
           type: 'dice.roll',
           requestId: 'req123',
           auth: { apiKey: 'test-api-key' },
-          body: { 
+          body: {
             formula: '1d20',
             reason: xss // XSS in reason field
           }
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         if (response.success) {
           // Check that HTML is escaped in response
           expect(response.data.reason).not.toContain('<script>');
@@ -117,7 +117,7 @@ describe('Input Validation Security', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should reject invalid formulas
         expect(response.success).toBe(false);
         expect(response.error).toBe('Validation Error');
@@ -144,7 +144,7 @@ describe('Input Validation Security', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Rejected by ID validation before any lookup
         expect(response.success).toBe(false);
         expect(response.error).toBe('Validation Error');
@@ -156,7 +156,7 @@ describe('Input Validation Security', () => {
   describe('Input Length Validation', () => {
     test('should enforce maximum query length', async () => {
       const longString = 'a'.repeat(1000);
-      
+
       const request = {
         type: 'actors.search',
         requestId: 'req123',
@@ -165,7 +165,7 @@ describe('Input Validation Security', () => {
       };
 
       const response = await socketHandler.handleMessage(request);
-      
+
       // Should reject or truncate overly long input
       expect(response.success).toBe(false);
       expect(response.error).toBe('Validation Error');
@@ -181,7 +181,7 @@ describe('Input Validation Security', () => {
       };
 
       const response = await socketHandler.handleMessage(request);
-      
+
       // Limits above the maximum (100) are rejected rather than capped
       expect(response.success).toBe(false);
       expect(response.error).toBe('Validation Error');
@@ -218,7 +218,7 @@ describe('Input Validation Security', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         expect(response.success).toBe(false);
         expect(response.error).toBe('Validation Error');
       }
@@ -262,7 +262,7 @@ describe('Input Validation Security', () => {
         { $gt: '' },
         { $ne: null },
         { $where: 'this.password == "admin"' },
-        { '$or': [{ 'a': 'a' }, { 'a': 'a' }] }
+        { $or: [{ a: 'a' }, { a: 'a' }] }
       ];
 
       for (const injection of noSqlInjections) {
@@ -274,7 +274,7 @@ describe('Input Validation Security', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Search validation keeps only query/type/limit, so operator keys
         // never reach the route: the search runs unfiltered and echoes none
         expect(response.success).toBe(true);
@@ -285,12 +285,7 @@ describe('Input Validation Security', () => {
 
   describe('Regular Expression DoS Prevention', () => {
     test('should prevent ReDoS attacks', async () => {
-      const redosPatterns = [
-        '(a+)+$',
-        '(a|a)*',
-        '(.*a){x}',
-        '((a+)+)+b'
-      ];
+      const redosPatterns = ['(a+)+$', '(a|a)*', '(.*a){x}', '((a+)+)+b'];
 
       for (const pattern of redosPatterns) {
         const request = {
@@ -307,7 +302,7 @@ describe('Input Validation Security', () => {
 
         // Should not take excessive time
         expect(duration).toBeLessThan(1000);
-        
+
         if (response.success) {
           expect(response.data.data).toEqual([]);
         }
@@ -335,7 +330,7 @@ describe('Input Validation Security', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         if (test.shouldFail) {
           expect(response.success).toBe(false);
         } else {

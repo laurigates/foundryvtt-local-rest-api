@@ -19,7 +19,7 @@ export class SocketMessageHandler {
     this.authManager = new AuthManager();
     this.permissionValidator = new PermissionValidator();
     this.validationSchemas = new ValidationSchemas();
-    
+
     // Initialize API handlers
     this.handlers = {
       actors: new ActorsAPI(),
@@ -94,23 +94,23 @@ export class SocketMessageHandler {
    */
   async handleMessage(data) {
     // Support both formats from bridge server
-    const { 
-      type, 
-      endpoint,  // Bridge server may send endpoint instead of type
-      requestId, 
-      auth, 
-      params = {}, 
-      query = {},  // Bridge server sends query separately
+    const {
+      type,
+      endpoint, // Bridge server may send endpoint instead of type
+      requestId,
+      auth,
+      params = {},
+      query = {}, // Bridge server sends query separately
       body = {},
       _queryUser // User from v13 Query System
     } = data;
-    
+
     // Map endpoint to type if needed
     let messageType = type;
     if (!messageType && endpoint) {
       messageType = this.mapEndpointToType(endpoint, params);
     }
-    
+
     // Merge query into params for compatibility. Destructuring defaults apply
     // only to undefined, so a message with `params: null` (or another
     // non-object) reached `params.query` and threw outside the try below.
@@ -149,7 +149,11 @@ export class SocketMessageHandler {
       // Validate input based on message type
       const validation = await this.validateInput(messageType, mergedParams, body);
       if (!validation.valid) {
-        return this.createErrorResponse(requestId, 'Validation Error', validation.errors.join(', '));
+        return this.createErrorResponse(
+          requestId,
+          'Validation Error',
+          validation.errors.join(', ')
+        );
       }
 
       // Check permissions for the operation
@@ -166,7 +170,6 @@ export class SocketMessageHandler {
       const routedBody = messageType === 'dice.roll' ? validation.data : body;
       const result = await this.routeMessage(messageType, validation.data, routedBody, user);
       return this.createSuccessResponse(requestId, result);
-
     } catch (error) {
       console.error('Foundry Local REST API | Error handling socket message:', error);
       return this.createErrorResponse(requestId, 'Internal Server Error', error.message);
@@ -178,13 +181,13 @@ export class SocketMessageHandler {
    */
   mapEndpointToType(endpoint, params) {
     const parts = endpoint.replace('/api/', '').split('/');
-    
+
     if (parts[0] === 'actors') {
       return params.id ? 'actors.get' : 'actors.search';
     } else if (parts[0] === 'items') {
       return params.id ? 'items.get' : 'items.search';
     } else if (parts[0] === 'scenes') {
-      return parts[1] === 'current' ? 'scenes.current' : (params.id ? 'scenes.get' : 'scenes.search');
+      return parts[1] === 'current' ? 'scenes.current' : params.id ? 'scenes.get' : 'scenes.search';
     } else if (parts[0] === 'world') {
       return 'world.info';
     } else if (parts[0] === 'dice' && parts[1] === 'roll') {
@@ -194,7 +197,7 @@ export class SocketMessageHandler {
     } else if (parts[0] === 'compendium' && parts[1] === 'search') {
       return 'compendium.search';
     }
-    
+
     return null;
   }
 
@@ -229,7 +232,7 @@ export class SocketMessageHandler {
    */
   async validateInput(type, params, body) {
     const [category, action] = type.split('.');
-    
+
     switch (category) {
       case 'actors':
         if (action === 'search') {
@@ -243,13 +246,13 @@ export class SocketMessageHandler {
           };
         }
         break;
-        
+
       case 'dice':
         if (action === 'roll') {
           return this.validationSchemas.validateDiceRoll(body);
         }
         break;
-        
+
       case 'compendium':
         if (action === 'search') {
           return this.asQuery(this.validationSchemas.validateCompendiumSearch(params.query || {}));
@@ -260,11 +263,11 @@ export class SocketMessageHandler {
       case 'scenes':
         // Similar validation patterns
         return { valid: true, errors: [], data: params };
-        
+
       default:
         return { valid: true, errors: [], data: params };
     }
-    
+
     return { valid: true, errors: [], data: params };
   }
 
@@ -280,7 +283,7 @@ export class SocketMessageHandler {
    */
   async checkPermissions(type, params, user) {
     const [category, action] = type.split('.');
-    
+
     // System-level permission checks
     const systemOps = {
       'world.info': 'world.info',
@@ -291,11 +294,11 @@ export class SocketMessageHandler {
       'diagnostics.search': 'diagnostics.search',
       'diagnostics.errors': 'diagnostics.errors'
     };
-    
+
     if (systemOps[type]) {
       return this.permissionValidator.validateSystemPermission(user, systemOps[type]);
     }
-    
+
     // Document-level permission checks
     if (category === 'actors' && action === 'get' && params.id) {
       const actor = game.actors.get(params.id);
@@ -304,7 +307,7 @@ export class SocketMessageHandler {
       }
       return this.permissionValidator.validateDocumentPermission(user, actor, 'read');
     }
-    
+
     if (category === 'dice' && action === 'roll') {
       // Check if user can roll dice
       if (!this.permissionValidator.hasMinimumRole(user, 'roll')) {
@@ -315,7 +318,7 @@ export class SocketMessageHandler {
         };
       }
     }
-    
+
     return { success: true };
   }
 
@@ -366,7 +369,7 @@ export class SocketMessageHandler {
     }
 
     const responseData = mockRes.getData();
-    
+
     // Apply permission-based data sanitization
     if (category === 'actors' && responseData) {
       if (Array.isArray(responseData.data)) {
@@ -374,22 +377,30 @@ export class SocketMessageHandler {
         // GMs see everything, as in PermissionValidator.filterByPermission.
         if (!user?.isGM) {
           const readable = responseData.data
-            .map(summary => ({ summary, actor: game.actors.get(summary.id) }))
-            .filter(({ actor }) => actor &&
-              this.permissionValidator.validateDocumentPermission(user, actor, 'read').success);
+            .map((summary) => ({ summary, actor: game.actors.get(summary.id) }))
+            .filter(
+              ({ actor }) =>
+                actor &&
+                this.permissionValidator.validateDocumentPermission(user, actor, 'read').success
+            );
           responseData.data = readable.map(({ summary, actor }) =>
-            this.permissionValidator.sanitizeDocumentData(user, actor, summary));
+            this.permissionValidator.sanitizeDocumentData(user, actor, summary)
+          );
           responseData.total = responseData.data.length;
         }
       } else if (responseData.data) {
         // Sanitize single actor data
         const actor = game.actors.get(params.id);
         if (actor) {
-          responseData.data = this.permissionValidator.sanitizeDocumentData(user, actor, responseData.data);
+          responseData.data = this.permissionValidator.sanitizeDocumentData(
+            user,
+            actor,
+            responseData.data
+          );
         }
       }
     }
-    
+
     return responseData;
   }
 
@@ -567,8 +578,8 @@ export class SocketMessageHandler {
     return {
       requestId,
       success: true,
-      result: data,  // Bridge server expects 'result' not 'data'
-      data,  // Keep both for compatibility
+      result: data, // Bridge server expects 'result' not 'data'
+      data, // Keep both for compatibility
       timestamp: Date.now(),
       v13: true // Indicate v13 features are available
     };
@@ -594,7 +605,9 @@ export class SocketMessageHandler {
     const logRequests = game.settings.get('foundryvtt-local-rest-api', 'log-requests');
     if (logRequests) {
       const authStatus = authenticated ? 'authenticated' : 'unauthorized';
-      const userInfo = user ? `[${user.name}:${this.permissionValidator.getRoleName(user.role)}]` : '[anonymous]';
+      const userInfo = user
+        ? `[${user.name}:${this.permissionValidator.getRoleName(user.role)}]`
+        : '[anonymous]';
       const info = additionalInfo ? ` - ${additionalInfo}` : '';
       console.log(`Foundry Local REST API | ${type} ${userInfo} (${authStatus})${info}`);
     }

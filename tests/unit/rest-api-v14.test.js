@@ -10,7 +10,9 @@ import { FoundryLocalRestAPI } from '../../scripts/rest-api.js';
 import { SOCKET_NAME } from '../../scripts/socket-routing.js';
 
 class FakeApplicationV2 {
-  render() { return this; }
+  render() {
+    return this;
+  }
 }
 const FakeMixin = (Base) => class extends Base {};
 
@@ -27,10 +29,15 @@ describe('createApiConfigApp (AppV2)', () => {
   });
 
   test('declares the template part and the three button actions', () => {
-    expect(App.PARTS.form.template).toBe('modules/foundryvtt-local-rest-api/templates/api-config.hbs');
+    expect(App.PARTS.form.template).toBe(
+      'modules/foundryvtt-local-rest-api/templates/api-config.hbs'
+    );
     expect(App.DEFAULT_OPTIONS.window.title).toBe('foundryvtt-local-rest-api.config.title');
-    expect(Object.keys(App.DEFAULT_OPTIONS.actions).sort())
-      .toEqual(['copyApiKey', 'regenerateApiKey', 'testConnection']);
+    expect(Object.keys(App.DEFAULT_OPTIONS.actions).sort()).toEqual([
+      'copyApiKey',
+      'regenerateApiKey',
+      'testConnection'
+    ]);
     for (const handler of Object.values(App.DEFAULT_OPTIONS.actions)) {
       expect(typeof handler).toBe('function');
     }
@@ -39,7 +46,12 @@ describe('createApiConfigApp (AppV2)', () => {
   test('prepares the template context from settings', async () => {
     game.settings.get.mockImplementation((_mod, key) => (key === 'api-key' ? 'k' : true));
     const context = await new App()._prepareContext({});
-    expect(context).toMatchObject({ apiKey: 'k', hasApiKey: true, isEnabled: true, socketNamespace: SOCKET_NAME });
+    expect(context).toMatchObject({
+      apiKey: 'k',
+      hasApiKey: true,
+      isEnabled: true,
+      socketNamespace: SOCKET_NAME
+    });
   });
 });
 
@@ -62,7 +74,11 @@ describe('FoundryLocalRestAPI socket listener', () => {
     game.socket.emit.mockClear();
     game.socket.on.mockClear();
     api = new FoundryLocalRestAPI();
-    api.socketHandler.handleMessage = jest.fn(async (data) => ({ requestId: data.requestId, success: true, data: {} }));
+    api.socketHandler.handleMessage = jest.fn(async (data) => ({
+      requestId: data.requestId,
+      success: true,
+      data: {}
+    }));
   });
 
   afterEach(() => {
@@ -104,11 +120,18 @@ describe('FoundryLocalRestAPI socket listener', () => {
 
   test('a handler exception still produces an error response', async () => {
     game.users = usersWhereSelfIsDesignated(true);
-    api.socketHandler.handleMessage = jest.fn(async () => { throw new Error('boom'); });
+    api.socketHandler.handleMessage = jest.fn(async () => {
+      throw new Error('boom');
+    });
     await api.onSocketMessage({ type: 'world.info', requestId: 'r2' }, bridgeId);
     expect(game.socket.emit).toHaveBeenCalledWith(
       SOCKET_NAME,
-      expect.objectContaining({ requestId: 'r2', success: false, message: 'boom', isResponse: true }),
+      expect.objectContaining({
+        requestId: 'r2',
+        success: false,
+        message: 'boom',
+        isResponse: true
+      }),
       { recipients: [bridgeId] }
     );
   });

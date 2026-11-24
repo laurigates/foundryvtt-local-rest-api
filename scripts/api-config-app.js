@@ -97,19 +97,25 @@ export function createApiConfigApp(api) {
           requestId: foundry.utils.randomID()
         });
         if (response.success) {
-          ui.notifications.info(game.i18n.format(`${MODULE_ID}.config.test-success`, {
-            status: response.data.status,
-            version: response.data.version
-          }));
+          ui.notifications.info(
+            game.i18n.format(`${MODULE_ID}.config.test-success`, {
+              status: response.data.status,
+              version: response.data.version
+            })
+          );
         } else {
-          ui.notifications.error(game.i18n.format(`${MODULE_ID}.config.test-failed`, {
-            status: response.error
-          }));
+          ui.notifications.error(
+            game.i18n.format(`${MODULE_ID}.config.test-failed`, {
+              status: response.error
+            })
+          );
         }
       } catch (error) {
-        ui.notifications.error(game.i18n.format(`${MODULE_ID}.config.test-error`, {
-          error: error.message
-        }));
+        ui.notifications.error(
+          game.i18n.format(`${MODULE_ID}.config.test-error`, {
+            error: error.message
+          })
+        );
       }
     }
   };

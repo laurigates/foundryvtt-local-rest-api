@@ -58,7 +58,7 @@ export function createActorsRouter(socketClient) {
     } catch (error) {
       console.error(`[ActorsRouter] Error getting actor ${req.params.id}:`, error.message);
       if (sendModuleRefusal(res, error)) return;
-      
+
       // Handle specific errors from FoundryVTT
       if (error.message.includes('Actor not found') || error.message.includes('404')) {
         res.status(404).json({
@@ -69,7 +69,7 @@ export function createActorsRouter(socketClient) {
       } else {
         res.status(500).json({
           success: false,
-          error: 'Internal Server Error', 
+          error: 'Internal Server Error',
           message: 'Failed to communicate with FoundryVTT server'
         });
       }

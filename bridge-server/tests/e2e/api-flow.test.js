@@ -1,9 +1,9 @@
 /**
  * End-to-End API Flow Tests
- * 
+ *
  * This test suite validates the complete REST API request flow:
  * HTTP Request → Bridge Server → Socket.io → Mock FoundryVTT Module → Response
- * 
+ *
  * Tests cover:
  * - All REST API endpoints
  * - Authentication scenarios
@@ -33,7 +33,7 @@ describe('E2E API Flow Tests', () => {
   let testApiKey = 'test_api_key_12345';
   let testPort = 3035; // Different from default to avoid conflicts
   let mockFoundryPort = 30003;
-  
+
   // Mock FoundryVTT responses for different endpoints
   const mockResponses = {
     'actors.search': {
@@ -112,9 +112,7 @@ describe('E2E API Flow Tests', () => {
       success: true,
       data: {
         formula: '1d20+5',
-        results: [
-          { die: 20, roll: 15 }
-        ],
+        results: [{ die: 20, roll: 15 }],
         total: 20,
         breakdown: '15 + 5',
         reason: 'Attack roll',
@@ -167,9 +165,7 @@ describe('E2E API Flow Tests', () => {
           { x1: 0, y1: 0, x2: 100, y2: 0 },
           { x1: 100, y1: 0, x2: 100, y2: 100 }
         ],
-        lights: [
-          { x: 50, y: 75, radius: 30, bright: 20, dim: 30 }
-        ]
+        lights: [{ x: 50, y: 75, radius: 30, bright: 20, dim: 30 }]
       }
     },
     'scenes.current': {
@@ -222,7 +218,7 @@ describe('E2E API Flow Tests', () => {
         }
       }
     },
-    'status': {
+    status: {
       success: true,
       status: 'ok',
       foundryVTT: {
@@ -259,7 +255,7 @@ describe('E2E API Flow Tests', () => {
       });
 
       this.setupEventHandlers();
-      
+
       return new Promise((resolve, reject) => {
         this.httpServer.listen(this.port, (error) => {
           if (error) {
@@ -295,9 +291,9 @@ describe('E2E API Flow Tests', () => {
 
     handleApiRequest(socket, requestData) {
       const { type, requestId, auth, params, body } = requestData;
-      
+
       console.log(`[MockFoundryServer] Received request: ${type} (${requestId})`);
-      
+
       // Simulate authentication check
       const expectedApiKey = testApiKey;
       if (!auth?.apiKey || auth.apiKey !== expectedApiKey) {
@@ -395,9 +391,9 @@ describe('E2E API Flow Tests', () => {
     // Start bridge server
     bridgeServer = new BridgeServer();
     await bridgeServer.start();
-    
+
     // Wait for connections to stabilize
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }, 30000);
 
   afterAll(async () => {
@@ -408,7 +404,7 @@ describe('E2E API Flow Tests', () => {
     if (mockFoundryServer) {
       await mockFoundryServer.stop();
     }
-    
+
     // Clear environment variables
     delete process.env.API_KEY;
     delete process.env.API_PORT;
@@ -424,9 +420,7 @@ describe('E2E API Flow Tests', () => {
 
   describe('Health Check Endpoint', () => {
     it('should return server status without authentication', async () => {
-      const response = await request(`http://localhost:${testPort}`)
-        .get('/api/status')
-        .expect(200);
+      const response = await request(`http://localhost:${testPort}`).get('/api/status').expect(200);
 
       expect(response.body).toMatchObject({
         success: true,
@@ -449,9 +443,7 @@ describe('E2E API Flow Tests', () => {
 
   describe('Authentication Tests', () => {
     it('should reject requests without API key', async () => {
-      const response = await request(`http://localhost:${testPort}`)
-        .get('/api/actors')
-        .expect(401);
+      const response = await request(`http://localhost:${testPort}`).get('/api/actors').expect(401);
 
       expect(response.body).toEqual({
         success: false,
@@ -468,7 +460,7 @@ describe('E2E API Flow Tests', () => {
 
       expect(response.body).toEqual({
         success: false,
-        error: 'Unauthorized', 
+        error: 'Unauthorized',
         message: 'Valid API key required'
       });
     });
@@ -732,18 +724,10 @@ describe('E2E API Flow Tests', () => {
   describe('Concurrent Request Handling', () => {
     it('should handle multiple concurrent requests', async () => {
       const requests = [
-        request(`http://localhost:${testPort}`)
-          .get('/api/actors')
-          .set('x-api-key', testApiKey),
-        request(`http://localhost:${testPort}`)
-          .get('/api/items')
-          .set('x-api-key', testApiKey),
-        request(`http://localhost:${testPort}`)
-          .get('/api/scenes')
-          .set('x-api-key', testApiKey),
-        request(`http://localhost:${testPort}`)
-          .get('/api/world')
-          .set('x-api-key', testApiKey),
+        request(`http://localhost:${testPort}`).get('/api/actors').set('x-api-key', testApiKey),
+        request(`http://localhost:${testPort}`).get('/api/items').set('x-api-key', testApiKey),
+        request(`http://localhost:${testPort}`).get('/api/scenes').set('x-api-key', testApiKey),
+        request(`http://localhost:${testPort}`).get('/api/world').set('x-api-key', testApiKey),
         request(`http://localhost:${testPort}`)
           .post('/api/dice/roll')
           .send({ formula: '1d6' })
@@ -770,22 +754,15 @@ describe('E2E API Flow Tests', () => {
 
     it('should handle mixed authentication scenarios in concurrent requests', async () => {
       const requests = [
-        request(`http://localhost:${testPort}`)
-          .get('/api/actors')
-          .set('x-api-key', testApiKey), // Valid
-        request(`http://localhost:${testPort}`)
-          .get('/api/items')
-          .set('x-api-key', 'invalid'), // Invalid
-        request(`http://localhost:${testPort}`)
-          .get('/api/scenes'), // No auth
+        request(`http://localhost:${testPort}`).get('/api/actors').set('x-api-key', testApiKey), // Valid
+        request(`http://localhost:${testPort}`).get('/api/items').set('x-api-key', 'invalid'), // Invalid
+        request(`http://localhost:${testPort}`).get('/api/scenes'), // No auth
         request(`http://localhost:${testPort}`)
           .get('/api/world')
           .set('Authorization', `Bearer ${testApiKey}`) // Valid Bearer
       ];
 
-      const responses = await Promise.all(
-        requests.map(req => req.catch(res => res))
-      );
+      const responses = await Promise.all(requests.map((req) => req.catch((res) => res)));
 
       expect(responses[0].status).toBe(200); // Valid auth
       expect(responses[1].status).toBe(401); // Invalid auth
@@ -823,12 +800,11 @@ describe('E2E API Flow Tests', () => {
     });
 
     it('should set correct HTTP headers', async () => {
-      const response = await request(`http://localhost:${testPort}`)
-        .get('/api/status');
+      const response = await request(`http://localhost:${testPort}`).get('/api/status');
 
       expect(response.headers['content-type']).toMatch(/application\/json/);
       expect(response.headers['x-content-type-options']).toBe('nosniff');
-      expect(response.headers['x-frame-options']).toBe('SAMEORIGIN');  // Helmet default
+      expect(response.headers['x-frame-options']).toBe('SAMEORIGIN'); // Helmet default
       expect(response.headers['x-xss-protection']).toBe('0');
     });
 
@@ -848,9 +824,7 @@ describe('E2E API Flow Tests', () => {
 
   describe('Root Endpoint Documentation', () => {
     it('should return API documentation at root endpoint', async () => {
-      const response = await request(`http://localhost:${testPort}`)
-        .get('/')
-        .expect(200);
+      const response = await request(`http://localhost:${testPort}`).get('/').expect(200);
 
       expect(response.body).toMatchObject({
         name: 'FoundryVTT REST API Bridge Server',
@@ -866,7 +840,7 @@ describe('E2E API Flow Tests', () => {
           diagnostics: '/api/diagnostics'
         }
       });
-      
+
       expect(response.body.documentation).toBeDefined();
     });
   });
@@ -920,12 +894,14 @@ class BridgeServer {
 
   setupMiddleware() {
     this.app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-    this.app.use(cors({
-      origin: '*',
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
-    }));
+    this.app.use(
+      cors({
+        origin: '*',
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
+      })
+    );
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
     // Same wiring as server.js: under the /api mount req.path is '/status',
@@ -1023,7 +999,7 @@ class BridgeServer {
 
   async shutdown(exitCode = 0) {
     if (this.server) {
-      await new Promise(resolve => this.server.close(resolve));
+      await new Promise((resolve) => this.server.close(resolve));
     }
     if (this.socketClient) {
       this.socketClient.disconnect();

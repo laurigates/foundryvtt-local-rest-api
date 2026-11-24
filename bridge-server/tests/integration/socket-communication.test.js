@@ -27,7 +27,7 @@ describe('Socket.io Communication Integration Tests', () => {
         ]
       }
     }),
-    
+
     'actors.get': (data) => {
       const actorId = data.params?.params?.id;
       if (actorId === 'nonexistent') {
@@ -47,7 +47,7 @@ describe('Socket.io Communication Integration Tests', () => {
         }
       };
     },
-    
+
     'items.search': (data) => ({
       success: true,
       data: {
@@ -57,7 +57,7 @@ describe('Socket.io Communication Integration Tests', () => {
         ]
       }
     }),
-    
+
     'dice.roll': (data) => {
       const { formula } = data.body || {};
       if (!formula) {
@@ -77,7 +77,7 @@ describe('Socket.io Communication Integration Tests', () => {
         }
       };
     },
-    
+
     'world.info': (data) => ({
       success: true,
       data: {
@@ -87,8 +87,8 @@ describe('Socket.io Communication Integration Tests', () => {
         stats: { actors: 50, items: 200, scenes: 10, users: 5 }
       }
     }),
-    
-    'status': (data) => ({
+
+    status: (data) => ({
       success: true,
       data: {
         status: 'healthy',
@@ -101,12 +101,12 @@ describe('Socket.io Communication Integration Tests', () => {
   beforeAll(async () => {
     // Create HTTP server
     httpServer = createServer();
-    
+
     // Create Socket.io server
     socketServer = new SocketIOServer(httpServer, {
       cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: '*',
+        methods: ['GET', 'POST']
       },
       path: '/socket.io',
       transports: ['websocket']
@@ -115,11 +115,13 @@ describe('Socket.io Communication Integration Tests', () => {
     // Set up FoundryVTT module simulation
     socketServer.on('connection', (socket) => {
       console.log(`[Mock FoundryVTT] Client connected: ${socket.id}`);
-      
+
       // Listen for API requests from bridge client
       socket.on('module.foundryvtt-local-rest-api', async (requestData) => {
-        console.log(`[Mock FoundryVTT] Received request: ${requestData.type} (${requestData.requestId})`);
-        
+        console.log(
+          `[Mock FoundryVTT] Received request: ${requestData.type} (${requestData.requestId})`
+        );
+
         // Simulate authentication check (skip for status endpoint)
         if (requestData.type !== 'status') {
           const apiKey = requestData.auth?.apiKey;
@@ -133,7 +135,7 @@ describe('Socket.io Communication Integration Tests', () => {
             socket.emit('module.foundryvtt-local-rest-api.response', authError);
             return;
           }
-          
+
           if (apiKey !== testApiKey && !apiKey.startsWith('test-api-key-')) {
             const authError = {
               requestId: requestData.requestId,
@@ -145,16 +147,16 @@ describe('Socket.io Communication Integration Tests', () => {
             return;
           }
         }
-        
+
         // Find appropriate handler
         const handler = mockFoundryHandlers[requestData.type];
         let response;
-        
+
         if (handler) {
           try {
             // Add small delay to simulate processing
-            await new Promise(resolve => setTimeout(resolve, 10));
-            
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
             response = {
               requestId: requestData.requestId,
               ...handler(requestData)
@@ -175,11 +177,13 @@ describe('Socket.io Communication Integration Tests', () => {
             message: `Unknown message type: ${requestData.type}`
           };
         }
-        
-        console.log(`[Mock FoundryVTT] Sending response: ${response.success ? 'success' : response.error} (${response.requestId})`);
+
+        console.log(
+          `[Mock FoundryVTT] Sending response: ${response.success ? 'success' : response.error} (${response.requestId})`
+        );
         socket.emit('module.foundryvtt-local-rest-api.response', response);
       });
-      
+
       socket.on('disconnect', (reason) => {
         console.log(`[Mock FoundryVTT] Client disconnected: ${reason}`);
       });
@@ -189,14 +193,14 @@ describe('Socket.io Communication Integration Tests', () => {
     await new Promise((resolve) => {
       httpServer.listen(testPort, resolve);
     });
-    
+
     console.log(`[Test Setup] Mock FoundryVTT server running on port ${testPort}`);
   });
 
   beforeEach(async () => {
     // Generate unique API key for each test
     testApiKey = 'test-api-key-' + Math.random().toString(36).substring(7);
-    
+
     // Create fresh socket client for each test
     socketClient = new FoundrySocketClient({
       foundryUrl: serverUrl,
@@ -210,9 +214,9 @@ describe('Socket.io Communication Integration Tests', () => {
     if (socketClient && socketClient.isConnected) {
       socketClient.disconnect();
     }
-    
+
     // Wait for cleanup
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   });
 
   afterAll(async () => {
@@ -220,14 +224,14 @@ describe('Socket.io Communication Integration Tests', () => {
     if (socketServer) {
       socketServer.close();
     }
-    
+
     // Close HTTP server
     if (httpServer) {
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         httpServer.close(resolve);
       });
     }
-    
+
     console.log('[Test Cleanup] Servers closed');
   });
 
@@ -235,15 +239,15 @@ describe('Socket.io Communication Integration Tests', () => {
     test('should establish socket connection successfully', async () => {
       const connectSpy = jest.fn();
       socketClient.on('connected', connectSpy);
-      
+
       const result = await socketClient.connect();
       expect(result).toBe(true);
-      
+
       expect(socketClient.isConnected).toBe(true);
       expect(socketClient.socket).toBeDefined();
       expect(socketClient.socket.connected).toBe(true);
       expect(connectSpy).toHaveBeenCalled();
-      
+
       const status = socketClient.getConnectionStatus();
       expect(status.connected).toBe(true);
       expect(status.socketId).toBeTruthy();
@@ -270,7 +274,7 @@ describe('Socket.io Communication Integration Tests', () => {
 
       // Disconnect from client side
       socketClient.disconnect();
-      
+
       expect(socketClient.isConnected).toBe(false);
       expect(disconnectSpy).toHaveBeenCalled();
     });
@@ -287,8 +291,8 @@ describe('Socket.io Communication Integration Tests', () => {
       serverSocket.disconnect();
 
       // Wait for disconnection event
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       expect(disconnectSpy).toHaveBeenCalled();
     });
   });
@@ -317,7 +321,7 @@ describe('Socket.io Communication Integration Tests', () => {
         timeout: 2000,
         requestTimeout: 1000
       });
-      
+
       await noAuthClient.connect();
 
       try {
@@ -369,7 +373,7 @@ describe('Socket.io Communication Integration Tests', () => {
 
     test('should handle specific actor get request', async () => {
       const actorId = 'test-actor-123';
-      
+
       const response = await socketClient.sendRequest(`/api/actors/${actorId}`, {
         method: 'GET',
         headers: { 'x-api-key': testApiKey }
@@ -491,12 +495,12 @@ describe('Socket.io Communication Integration Tests', () => {
       // Create a mock server that ignores our specific request
       let skipResponse = true;
       const currentSockets = Array.from(socketServer.sockets.sockets.values());
-      
+
       // Temporarily override the socket's message handler to not respond
-      const originalHandlers = currentSockets.map(socket => {
+      const originalHandlers = currentSockets.map((socket) => {
         const originalHandler = socket.listeners('module.foundryvtt-local-rest-api')[0];
         socket.off('module.foundryvtt-local-rest-api', originalHandler);
-        
+
         // New handler that ignores messages when skipResponse is true
         const newHandler = (requestData) => {
           if (!skipResponse) {
@@ -504,7 +508,7 @@ describe('Socket.io Communication Integration Tests', () => {
           }
           // When skipResponse is true, we just ignore the message (no response)
         };
-        
+
         socket.on('module.foundryvtt-local-rest-api', newHandler);
         return { socket, originalHandler, newHandler };
       });
@@ -595,7 +599,7 @@ describe('Socket.io Communication Integration Tests', () => {
       expect(results[0].status).toBe('fulfilled');
       expect(results[1].status).toBe('rejected');
       expect(results[2].status).toBe('fulfilled');
-      
+
       expect(results[0].value).toHaveProperty('status', 'healthy');
       expect(results[1].reason.message).toContain('Actor not found');
       expect(results[2].value).toHaveProperty('actors');
@@ -633,11 +637,11 @@ describe('Socket.io Communication Integration Tests', () => {
       serverSocket.disconnect();
 
       // Wait for disconnection
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Socket.io should automatically attempt reconnection
       // Wait for potential reconnection
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Check if reconnection occurred (might not complete in test timeframe)
       // This tests the reconnection mechanism is in place
@@ -668,10 +672,10 @@ describe('Socket.io Communication Integration Tests', () => {
 
     test('should send messages matching contract format', async () => {
       let messageData = null;
-      
+
       // Monitor outgoing messages
       const originalEmit = socketClient.socket.emit;
-      socketClient.socket.emit = function(event, data) {
+      socketClient.socket.emit = function (event, data) {
         if (event === 'module.foundryvtt-local-rest-api') {
           messageData = data;
         }
@@ -692,7 +696,7 @@ describe('Socket.io Communication Integration Tests', () => {
       expect(messageData.auth).toHaveProperty('apiKey');
       expect(messageData.params).toHaveProperty('query');
       expect(messageData.params).toHaveProperty('params');
-      
+
       // Restore original emit
       socketClient.socket.emit = originalEmit;
     });
@@ -740,7 +744,7 @@ describe('Socket.io Communication Integration Tests', () => {
       });
 
       // Check that pending request is tracked
-      await new Promise(resolve => setTimeout(resolve, 5)); // Small delay
+      await new Promise((resolve) => setTimeout(resolve, 5)); // Small delay
       const status = socketClient.getConnectionStatus();
       expect(status.pendingRequests).toBeGreaterThanOrEqual(0);
 

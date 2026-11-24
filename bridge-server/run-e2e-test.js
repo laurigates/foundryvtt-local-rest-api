@@ -29,7 +29,7 @@ async function testComponents() {
   const io = new SocketServer(httpServer, {
     cors: { origin: '*' }
   });
-  
+
   httpServer.listen(3033, () => {
     console.log('Socket.io server started on port 3033');
   });
@@ -41,16 +41,16 @@ async function testComponents() {
   });
 
   console.log('All components created successfully!');
-  
+
   // Cleanup
   server.close();
   httpServer.close();
   io.close();
-  
+
   console.log('E2E Components Check PASSED!');
 }
 
-testComponents().catch(err => {
+testComponents().catch((err) => {
   console.error('E2E Components Check FAILED:', err);
   process.exit(1);
 });

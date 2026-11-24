@@ -16,7 +16,7 @@ export class SocketBridge {
     if (this.isInitialized) {
       return;
     }
-    
+
     console.log('Foundry Local REST API | Socket bridge skipped (handled by main module)');
     this.isInitialized = true;
   }

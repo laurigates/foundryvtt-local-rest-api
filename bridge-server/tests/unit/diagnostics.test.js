@@ -8,11 +8,11 @@ describe('Diagnostics Router', () => {
   let app;
   let server;
   let mockSocketClient;
-  
+
   beforeEach(async () => {
     app = express();
     app.use(express.json());
-    
+
     // Create a comprehensive mock socket client with new diagnostic methods
     mockSocketClient = {
       isConnected: false,
@@ -20,9 +20,9 @@ describe('Diagnostics Router', () => {
       lastError: null,
       errorHistory: [],
       connectionAttempts: 0,
-      
+
       sendRequest: jest.fn(),
-      
+
       // New diagnostic methods
       getConnectionDiagnostics: jest.fn().mockReturnValue({
         status: {
@@ -64,40 +64,40 @@ describe('Diagnostics Router', () => {
           apiKeyConfigured: true
         }
       }),
-      
-      getTroubleshootingSuggestions: jest.fn().mockReturnValue([
-        'Socket is not connected to FoundryVTT',
-        'Last error: connection_refused',
-        'Check if FoundryVTT is running',
-        'Multiple connection attempts have failed'
-      ])
+
+      getTroubleshootingSuggestions: jest
+        .fn()
+        .mockReturnValue([
+          'Socket is not connected to FoundryVTT',
+          'Last error: connection_refused',
+          'Check if FoundryVTT is running',
+          'Multiple connection attempts have failed'
+        ])
     };
-    
+
     // Add middleware to inject API key
     app.use((req, res, next) => {
       req.apiKey = 'test-api-key';
       next();
     });
-    
+
     // Mount the router
     app.use('/api/diagnostics', createDiagnosticsRouter(mockSocketClient));
     server = await listenLoopback(app);
   });
 
   afterEach(() => close(server));
-  
+
   describe('GET /api/diagnostics/connection', () => {
     it('should return comprehensive connection diagnostics', async () => {
-      const response = await request(server)
-        .get('/api/diagnostics/connection')
-        .expect(200);
-      
+      const response = await request(server).get('/api/diagnostics/connection').expect(200);
+
       expect(response.body.success).toBe(true);
       expect(response.body.timestamp).toBeDefined();
       expect(response.body.connection).toBeDefined();
       expect(response.body.troubleshooting).toBeDefined();
       expect(response.body.quickCheck).toBeDefined();
-      
+
       // Verify the structure
       expect(response.body.connection.status.connected).toBe(false);
       expect(response.body.connection.statistics.connectionAttempts).toBe(3);
@@ -106,7 +106,7 @@ describe('Diagnostics Router', () => {
       expect(response.body.quickCheck.foundryReachable).toBe(false);
       expect(response.body.quickCheck.apiKeyConfigured).toBe(true);
     });
-    
+
     it('should indicate when connection is healthy', async () => {
       // Mock a successful connection
       mockSocketClient.getConnectionDiagnostics.mockReturnValue({
@@ -132,13 +132,11 @@ describe('Diagnostics Router', () => {
           apiKeyConfigured: true
         }
       });
-      
+
       mockSocketClient.getTroubleshootingSuggestions.mockReturnValue([]);
-      
-      const response = await request(server)
-        .get('/api/diagnostics/connection')
-        .expect(200);
-      
+
+      const response = await request(server).get('/api/diagnostics/connection').expect(200);
+
       expect(response.body.success).toBe(true);
       expect(response.body.connection.status.connected).toBe(true);
       expect(response.body.connection.errorHistory).toHaveLength(0);
@@ -146,16 +144,14 @@ describe('Diagnostics Router', () => {
       expect(response.body.quickCheck.foundryReachable).toBe(true);
       expect(response.body.quickCheck.recentErrors).toBe(0);
     });
-    
+
     it('should handle errors gracefully', async () => {
       mockSocketClient.getConnectionDiagnostics.mockImplementation(() => {
         throw new Error('Diagnostic error');
       });
-      
-      const response = await request(server)
-        .get('/api/diagnostics/connection')
-        .expect(500);
-      
+
+      const response = await request(server).get('/api/diagnostics/connection').expect(500);
+
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Diagnostic Error');
       expect(response.body.message).toBe('Diagnostic error');
@@ -163,7 +159,7 @@ describe('Diagnostics Router', () => {
       expect(response.body.basicStatus.connected).toBe(false);
     });
   });
-  
+
   describe('Error Categorization', () => {
     it('should properly categorize different error types', () => {
       // Reference table only; categorizeError is not exercised here
@@ -194,7 +190,7 @@ describe('Diagnostics Router', () => {
           expectedType: 'transport_error'
         }
       ];
-      
+
       // This would test the actual categorizeError method if we could import it
       // For now, we're testing that the endpoint properly uses these categorizations
       expect(mockSocketClient.getConnectionDiagnostics).toBeDefined();
@@ -211,39 +207,38 @@ describe('Connection Troubleshooting', () => {
         type: 'connection_refused',
         troubleshooting: ['Check if FoundryVTT is running']
       },
-      errorHistory: [
-        { type: 'connection_refused' },
-        { type: 'timeout' }
-      ],
+      errorHistory: [{ type: 'connection_refused' }, { type: 'timeout' }],
       pendingRequests: { size: 10 },
-      
-      getTroubleshootingSuggestions: function() {
+
+      getTroubleshootingSuggestions: function () {
         const suggestions = [];
-        
+
         if (!this.isConnected) {
           suggestions.push('Socket is not connected to FoundryVTT');
-          
+
           if (this.lastError) {
             suggestions.push(`Last error: ${this.lastError.type}`);
             suggestions.push(...this.lastError.troubleshooting);
           }
-          
+
           if (this.connectionAttempts > 3) {
             suggestions.push('Multiple connection attempts have failed');
             suggestions.push('Consider checking FoundryVTT logs for more information');
           }
         }
-        
+
         if (this.pendingRequests.size > 5) {
-          suggestions.push(`${this.pendingRequests.size} requests are pending - possible performance issue`);
+          suggestions.push(
+            `${this.pendingRequests.size} requests are pending - possible performance issue`
+          );
         }
-        
+
         return suggestions;
       }
     };
-    
+
     const suggestions = mockClient.getTroubleshootingSuggestions();
-    
+
     expect(suggestions).toContain('Socket is not connected to FoundryVTT');
     expect(suggestions).toContain('Last error: connection_refused');
     expect(suggestions).toContain('Check if FoundryVTT is running');

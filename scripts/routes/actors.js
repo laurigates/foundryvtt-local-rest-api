@@ -30,7 +30,6 @@ export function hasSpellProperty(system, name) {
 }
 
 export class ActorsAPI {
-
   /**
    * Search for actors based on query parameters
    * GET /api/actors?query=name&type=character&limit=10
@@ -43,22 +42,20 @@ export class ActorsAPI {
 
       // Filter by type if specified
       if (type) {
-        actors = actors.filter(actor => actor.type === type);
+        actors = actors.filter((actor) => actor.type === type);
       }
 
       // Filter by query if specified (search in name)
       if (query) {
         const searchQuery = query.toLowerCase();
-        actors = actors.filter(actor =>
-          actor.name.toLowerCase().includes(searchQuery)
-        );
+        actors = actors.filter((actor) => actor.name.toLowerCase().includes(searchQuery));
       }
 
       // Limit results
       actors = actors.slice(0, parseInt(limit));
 
       // Format response
-      const results = actors.map(actor => this.formatActorSummary(actor));
+      const results = actors.map((actor) => this.formatActorSummary(actor));
 
       res.json({
         success: true,
@@ -66,7 +63,6 @@ export class ActorsAPI {
         total: results.length,
         query: { query, type, limit }
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error searching actors:', error);
       res.status(500).json({
@@ -100,7 +96,6 @@ export class ActorsAPI {
         success: true,
         data: actorData
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error getting actor:', error);
       res.status(500).json({
@@ -148,7 +143,7 @@ export class ActorsAPI {
       // Additional detailed information
       abilities: this.formatAbilities(system.abilities || {}),
       skills: this.formatSkills(system.skills || {}),
-      items: Array.from(actor.items.values()).map(item => ({
+      items: Array.from(actor.items.values()).map((item) => ({
         id: item.id,
         name: item.name,
         type: item.type,
@@ -165,7 +160,7 @@ export class ActorsAPI {
       },
       ownership: actor.ownership,
       flags: actor.flags,
-      effects: Array.from(actor.effects || []).map(effect => ({
+      effects: Array.from(actor.effects || []).map((effect) => ({
         id: effect.id,
         name: effect.name,
         icon: effect.img,
@@ -222,8 +217,7 @@ export class ActorsAPI {
    * Format spells for spellcasters
    */
   formatSpells(actor) {
-    const spells = Array.from(actor.items.values())
-      .filter(item => item.type === 'spell');
+    const spells = Array.from(actor.items.values()).filter((item) => item.type === 'spell');
 
     if (spells.length === 0) {
       return null;
@@ -231,7 +225,7 @@ export class ActorsAPI {
 
     // Group spells by level
     const spellsByLevel = {};
-    spells.forEach(spell => {
+    spells.forEach((spell) => {
       const level = spell.system?.level || 0;
       if (!spellsByLevel[level]) {
         spellsByLevel[level] = [];

@@ -21,7 +21,10 @@ function generate(env = {}) {
     process.stdout.write(processTemplateToString());`;
   const childEnv = { ...process.env, GITHUB_REPOSITORY: REPO, MODULE_VERSION: '2.1.0', ...env };
   if (!('AUTHOR_EMAIL' in env)) delete childEnv.AUTHOR_EMAIL;
-  const out = execFileSync(process.execPath, ['--input-type=module', '-e', script], { env: childEnv, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+    env: childEnv,
+    encoding: 'utf8'
+  });
   return JSON.parse(out);
 }
 
@@ -42,8 +45,12 @@ describe('module.json generation', () => {
   test("downloads the release's own zip; the manifest tracks the latest release", () => {
     const moduleJson = generate();
 
-    expect(moduleJson.download).toBe(`https://github.com/${REPO}/releases/download/v2.1.0/foundryvtt-local-rest-api.zip`);
-    expect(moduleJson.manifest).toBe(`https://github.com/${REPO}/releases/latest/download/module.json`);
+    expect(moduleJson.download).toBe(
+      `https://github.com/${REPO}/releases/download/v2.1.0/foundryvtt-local-rest-api.zip`
+    );
+    expect(moduleJson.manifest).toBe(
+      `https://github.com/${REPO}/releases/latest/download/module.json`
+    );
   });
 
   test('points readme and changelog at files in the repository root at the release tag', () => {

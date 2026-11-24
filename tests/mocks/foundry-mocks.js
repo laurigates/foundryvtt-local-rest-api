@@ -6,40 +6,38 @@
 export class MockCollection {
   constructor(items = []) {
     this._items = new Map();
-    items.forEach(item => this._items.set(item.id, item));
+    items.forEach((item) => this._items.set(item.id, item));
   }
-  
+
   get contents() {
     return Array.from(this._items.values());
   }
-  
+
   get(id) {
     return this._items.get(id) || null;
   }
-  
+
   find(fn) {
     return this.contents.find(fn);
   }
-  
+
   filter(fn) {
     return this.contents.filter(fn);
   }
-  
+
   search(query) {
     const searchTerm = query.toLowerCase();
-    return this.contents.filter(item => 
-      item.name?.toLowerCase().includes(searchTerm)
-    );
+    return this.contents.filter((item) => item.name?.toLowerCase().includes(searchTerm));
   }
-  
+
   map(fn) {
     return this.contents.map(fn);
   }
-  
+
   reduce(fn, initial) {
     return this.contents.reduce(fn, initial);
   }
-  
+
   get size() {
     return this._items.size;
   }
@@ -76,7 +74,7 @@ export class MockActor {
     this.permission = data.permission || { default: 0 };
     this.flags = data.flags || {};
   }
-  
+
   toObject() {
     return {
       id: this.id,
@@ -84,14 +82,14 @@ export class MockActor {
       type: this.type,
       img: this.img,
       system: this.system,
-      items: this.items.contents.map(i => i.toObject()),
+      items: this.items.contents.map((i) => i.toObject()),
       effects: this.effects.contents,
       folder: this.folder,
       permission: this.permission,
       flags: this.flags
     };
   }
-  
+
   update(data) {
     Object.assign(this, data);
     return Promise.resolve(this);
@@ -118,7 +116,7 @@ export class MockItem {
     this.sort = data.sort || 0;
     this.flags = data.flags || {};
   }
-  
+
   toObject() {
     return {
       id: this.id,
@@ -132,7 +130,7 @@ export class MockItem {
       flags: this.flags
     };
   }
-  
+
   update(data) {
     Object.assign(this, data);
     return Promise.resolve(this);
@@ -167,7 +165,7 @@ export class MockScene {
     this.notes = new MockCollection(data.notes || []);
     this.flags = data.flags || {};
   }
-  
+
   toObject() {
     return {
       id: this.id,
@@ -192,12 +190,12 @@ export class MockScene {
       flags: this.flags
     };
   }
-  
+
   update(data) {
     Object.assign(this, data);
     return Promise.resolve(this);
   }
-  
+
   activate() {
     this.active = true;
     return Promise.resolve(this);
@@ -215,11 +213,11 @@ export class MockCombat {
     this.sort = data.sort || 0;
     this.flags = data.flags || {};
   }
-  
+
   get started() {
     return this.round > 0;
   }
-  
+
   get current() {
     return {
       round: this.round,
@@ -228,7 +226,7 @@ export class MockCombat {
       tokenId: this.combatants.contents[this.turn]?.tokenId || null
     };
   }
-  
+
   toObject() {
     return {
       id: this.id,
@@ -241,13 +239,13 @@ export class MockCombat {
       flags: this.flags
     };
   }
-  
+
   startCombat() {
     this.round = 1;
     this.turn = 0;
     return Promise.resolve(this);
   }
-  
+
   nextTurn() {
     this.turn++;
     if (this.turn >= this.combatants.size) {
@@ -271,19 +269,19 @@ export class MockUser {
     this.permissions = data.permissions || {};
     this.flags = data.flags || {};
   }
-  
+
   get isGM() {
     return this.role >= 4;
   }
-  
+
   hasRole(role) {
     return this.role >= role;
   }
-  
+
   hasPermission(permission) {
     return this.isGM || this.permissions[permission];
   }
-  
+
   toObject() {
     return {
       id: this.id,
@@ -309,27 +307,27 @@ export class MockRoll {
     this.results = [];
     this._rolled = false;
   }
-  
+
   async evaluate({ async = true } = {}) {
     if (this._rolled) return this;
-    
+
     // Simple dice rolling simulation
     const match = this.formula.match(/(\d+)d(\d+)([+-]\d+)?/);
     if (match) {
       const [, num, sides, modifier] = match;
       const rolls = [];
       let total = 0;
-      
+
       for (let i = 0; i < parseInt(num); i++) {
         const roll = Math.floor(Math.random() * parseInt(sides)) + 1;
         rolls.push(roll);
         total += roll;
       }
-      
+
       if (modifier) {
         total += parseInt(modifier);
       }
-      
+
       this.total = total;
       this.results = rolls;
     } else {
@@ -340,18 +338,18 @@ export class MockRoll {
         this.total = 0;
       }
     }
-    
+
     this._rolled = true;
     return this;
   }
-  
+
   async roll() {
     return this.evaluate();
   }
-  
+
   async toMessage(messageData = {}) {
     if (!this._rolled) await this.roll();
-    
+
     return {
       id: `message-${Math.random().toString(36).substring(7)}`,
       type: 5, // ROLL type
@@ -364,7 +362,7 @@ export class MockRoll {
       ...messageData
     };
   }
-  
+
   toJSON() {
     return {
       class: 'Roll',
@@ -381,14 +379,14 @@ export class MockSocket {
     this.listeners = new Map();
     this.connected = false;
   }
-  
+
   on(event, handler) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
     this.listeners.get(event).push(handler);
   }
-  
+
   off(event, handler) {
     if (this.listeners.has(event)) {
       const handlers = this.listeners.get(event);
@@ -398,19 +396,19 @@ export class MockSocket {
       }
     }
   }
-  
+
   emit(event, data) {
     if (this.listeners.has(event)) {
-      this.listeners.get(event).forEach(handler => {
+      this.listeners.get(event).forEach((handler) => {
         handler(data);
       });
     }
   }
-  
+
   connect() {
     this.connected = true;
   }
-  
+
   disconnect() {
     this.connected = false;
   }

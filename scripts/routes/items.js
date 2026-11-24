@@ -5,7 +5,6 @@
 import { formatSource } from './actors.js';
 
 export class ItemsAPI {
-
   /**
    * Search for items based on query parameters
    * GET /api/items?query=sword&type=weapon&rarity=rare&limit=20
@@ -21,8 +20,8 @@ export class ItemsAPI {
       items.push(...Array.from(game.items.values()));
 
       // Add items from all actors
-      game.actors.forEach(actor => {
-        actor.items.forEach(item => {
+      game.actors.forEach((actor) => {
+        actor.items.forEach((item) => {
           items.push({
             ...item,
             // Document#id is a prototype getter, which a spread drops
@@ -35,15 +34,16 @@ export class ItemsAPI {
 
       // Filter by type if specified
       if (type) {
-        items = items.filter(item => item.type === type);
+        items = items.filter((item) => item.type === type);
       }
 
       // Filter by rarity if specified
       if (rarity) {
-        items = items.filter(item => {
-          const itemRarity = item.system?.rarity?.toLowerCase() ||
-                           item.system?.details?.rarity?.toLowerCase() ||
-                           'common';
+        items = items.filter((item) => {
+          const itemRarity =
+            item.system?.rarity?.toLowerCase() ||
+            item.system?.details?.rarity?.toLowerCase() ||
+            'common';
           return itemRarity === rarity.toLowerCase();
         });
       }
@@ -51,7 +51,7 @@ export class ItemsAPI {
       // Filter by query if specified (search in name and description)
       if (query) {
         const searchQuery = query.toLowerCase();
-        items = items.filter(item => {
+        items = items.filter((item) => {
           const name = item.name?.toLowerCase() || '';
           const description = item.system?.description?.value?.toLowerCase() || '';
           return name.includes(searchQuery) || description.includes(searchQuery);
@@ -62,7 +62,7 @@ export class ItemsAPI {
       const uniqueItems = [];
       const seen = new Set();
 
-      items.forEach(item => {
+      items.forEach((item) => {
         const key = `${item.name}-${item.type}`;
         if (!seen.has(key)) {
           seen.add(key);
@@ -74,7 +74,7 @@ export class ItemsAPI {
       const limitedItems = uniqueItems.slice(0, parseInt(limit));
 
       // Format response
-      const results = limitedItems.map(item => this.formatItemSummary(item));
+      const results = limitedItems.map((item) => this.formatItemSummary(item));
 
       res.json({
         success: true,
@@ -82,7 +82,6 @@ export class ItemsAPI {
         total: results.length,
         query: { query, type, rarity, limit }
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error searching items:', error);
       res.status(500).json({
@@ -131,7 +130,6 @@ export class ItemsAPI {
         success: true,
         data: itemData
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error getting item:', error);
       res.status(500).json({
@@ -165,10 +163,12 @@ export class ItemsAPI {
       identified: system.identified !== false,
       attunement: system.attunement || 0,
       source: formatSource(system.source ?? system.details?.source),
-      owner: item._ownerName ? {
-        id: item._ownerId,
-        name: item._ownerName
-      } : null,
+      owner: item._ownerName
+        ? {
+            id: item._ownerId,
+            name: item._ownerName
+          }
+        : null,
       folder: item.folder?.name || null
     };
   }
@@ -231,7 +231,7 @@ export class ItemsAPI {
       },
       requirements: system.requirements || '',
       flags: item.flags,
-      effects: Array.from(item.effects || []).map(effect => ({
+      effects: Array.from(item.effects || []).map((effect) => ({
         id: effect.id,
         name: effect.name,
         icon: effect.img,
@@ -252,7 +252,7 @@ export class ItemsAPI {
 
     // Weapon properties
     if (system.properties) {
-      Object.keys(system.properties).forEach(prop => {
+      Object.keys(system.properties).forEach((prop) => {
         if (system.properties[prop]) {
           properties[prop] = true;
         }

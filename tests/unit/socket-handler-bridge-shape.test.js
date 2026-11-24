@@ -12,7 +12,18 @@ import { SocketMessageHandler } from '../../scripts/socket-handler.js';
 const API_KEY = 'test-api-key';
 
 function actor(id, name, type, ownership = {}) {
-  return { id, name, type, img: `${id}.webp`, ownership, system: {}, hasPlayerOwner: false, folder: null, items: new Map(), effects: [] };
+  return {
+    id,
+    name,
+    type,
+    img: `${id}.webp`,
+    ownership,
+    system: {},
+    hasPlayerOwner: false,
+    folder: null,
+    items: new Map(),
+    effects: []
+  };
 }
 
 function bridgeRequest(type, { query = {}, params = {}, body = null } = {}) {
@@ -83,7 +94,7 @@ describe('SocketMessageHandler with bridge-shaped requests', () => {
       );
 
       expect(response.success).toBe(true);
-      expect(response.data.data.map(a => a.name)).toEqual(['Goblin', 'Goblin Boss']);
+      expect(response.data.data.map((a) => a.name)).toEqual(['Goblin', 'Goblin Boss']);
       expect(response.data.total).toBe(2);
     });
 
@@ -92,7 +103,7 @@ describe('SocketMessageHandler with bridge-shaped requests', () => {
         bridgeRequest('actors.search', { query: { query: 'gob', type: 'character' } })
       );
 
-      expect(response.data.data.map(a => a.name)).toEqual(['Gobbo the Hero']);
+      expect(response.data.data.map((a) => a.name)).toEqual(['Gobbo the Hero']);
     });
 
     test('applies limit, given as an HTTP query string', async () => {
@@ -124,7 +135,7 @@ describe('SocketMessageHandler with bridge-shaped requests', () => {
       const response = await handler.handleMessage(bridgeRequest('actors.search', { query: {} }));
 
       expect(response.success).toBe(true);
-      expect(response.data.data.map(a => a.id)).toEqual(['goblin0000000001']);
+      expect(response.data.data.map((a) => a.id)).toEqual(['goblin0000000001']);
       expect(response.data.total).toBe(1);
     });
 
@@ -138,12 +149,15 @@ describe('SocketMessageHandler with bridge-shaped requests', () => {
 
   describe('POST /api/dice/roll (dice.roll)', () => {
     test('passes the validated body to the route, not the raw one', async () => {
-      const rollDice = jest.spyOn(handler.handlers.dice, 'rollDice')
+      const rollDice = jest
+        .spyOn(handler.handlers.dice, 'rollDice')
         .mockImplementation((req, res) => res.json({ success: true, data: req.body }));
 
-      const response = await handler.handleMessage(bridgeRequest('dice.roll', {
-        body: { formula: '1d20', reason: 'Tom\'s "attack"', advantage: 'yes', extra: 'dropped' }
-      }));
+      const response = await handler.handleMessage(
+        bridgeRequest('dice.roll', {
+          body: { formula: '1d20', reason: 'Tom\'s "attack"', advantage: 'yes', extra: 'dropped' }
+        })
+      );
 
       expect(response.success).toBe(true);
       const seen = rollDice.mock.calls[0][0].body;

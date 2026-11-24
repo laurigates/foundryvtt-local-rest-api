@@ -9,7 +9,7 @@ import { AuthManager } from '../../scripts/auth.js';
 describe('Injection Attack Prevention', () => {
   let socketHandler;
   let authManager;
-  
+
   beforeEach(() => {
     // Setup mock environment
     global.game = {
@@ -22,7 +22,7 @@ describe('Injection Attack Prevention', () => {
 
     global.console.error = jest.fn();
     global.console.log = jest.fn();
-    
+
     // Initialize handlers
     socketHandler = new SocketMessageHandler();
     socketHandler.setApiKey('test-api-key');
@@ -89,15 +89,15 @@ describe('Injection Attack Prevention', () => {
         {
           type: 'actors.search',
           params: {
-            '__proto__': { 'isAdmin': true },
+            __proto__: { isAdmin: true },
             query: 'test'
           }
         },
         {
           type: 'actors.search',
           params: {
-            'constructor': {
-              'prototype': { 'isAdmin': true }
+            constructor: {
+              prototype: { isAdmin: true }
             }
           }
         },
@@ -105,7 +105,7 @@ describe('Injection Attack Prevention', () => {
           type: 'actors.search',
           params: {
             query: {
-              '__proto__': { 'polluted': true }
+              __proto__: { polluted: true }
             }
           }
         }
@@ -150,12 +150,12 @@ describe('Injection Attack Prevention', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should reject without executing
         expect(response.success).toBe(false);
         expect(response.error).toBe('Validation Error');
         expect(response.message).toMatch(/invalid/i);
-        
+
         // Process should still be running
         expect(exitSpy).not.toHaveBeenCalled();
       }
@@ -182,7 +182,7 @@ describe('Injection Attack Prevention', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should sanitize special characters
         expect(response.success).toBe(true);
         expect(response.data.data).toEqual([]);
@@ -207,7 +207,7 @@ describe('Injection Attack Prevention', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Markup is rejected by validation before any search runs
         expect(response.success).toBe(false);
         expect(response.error).toBe('Validation Error');
@@ -236,7 +236,7 @@ describe('Injection Attack Prevention', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should not evaluate templates
         if (response.success && response.data.data.length > 0) {
           expect(JSON.stringify(response.data.data[0])).not.toContain('49'); // 7*7
@@ -262,7 +262,7 @@ describe('Injection Attack Prevention', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should reject invalid header values
         expect(response.success).toBe(false);
         expect(response.error).toContain('Unauthorized');
@@ -289,7 +289,7 @@ describe('Injection Attack Prevention', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should normalize or reject suspicious Unicode
         expect(response.success).toBe(true);
         expect(response.data.data).toEqual([]);
@@ -315,7 +315,7 @@ describe('Injection Attack Prevention', () => {
         };
 
         const response = await socketHandler.handleMessage(request);
-        
+
         // Should cap or reject overflow values
         if (response.success) {
           expect(response.data.data.length).toBeLessThanOrEqual(100);

@@ -46,7 +46,7 @@ export class HTTPServerHandler {
 
     try {
       // Parse route
-      const pathParts = route.split('/').filter(p => p);
+      const pathParts = route.split('/').filter((p) => p);
       if (pathParts.length < 2) {
         return next();
       }
@@ -91,7 +91,6 @@ export class HTTPServerHandler {
 
       // Handle based on route
       await this.routeRequest(pathParts[1], pathParts[2], handler, mockReq, mockRes);
-
     } catch (error) {
       console.error('Foundry Local REST API | Error handling request:', error);
       this.sendError(response, 500, 'Internal Server Error', error.message);
@@ -158,7 +157,7 @@ export class HTTPServerHandler {
   extractApiKey(request) {
     const headers = request.headers || {};
     let apiKey = headers['x-api-key'];
-    
+
     if (!apiKey) {
       const authHeader = headers['authorization'];
       if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -182,10 +181,12 @@ export class HTTPServerHandler {
    */
   sendError(response, code, error, message) {
     response.writeHead(code, { 'Content-Type': 'application/json' });
-    response.end(JSON.stringify({
-      success: false,
-      error,
-      message
-    }));
+    response.end(
+      JSON.stringify({
+        success: false,
+        error,
+        message
+      })
+    );
   }
 }

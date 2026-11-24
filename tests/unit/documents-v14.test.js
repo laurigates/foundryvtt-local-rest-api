@@ -22,17 +22,30 @@ function collection(list) {
 
 function dnd5eNpc() {
   const spell = {
-    id: 'spell00000000001', name: 'Fire Bolt', type: 'spell', img: 'x.webp',
+    id: 'spell00000000001',
+    name: 'Fire Bolt',
+    type: 'spell',
+    img: 'x.webp',
     system: {
-      level: 0, school: 'evo', method: 'spell', prepared: 1,
+      level: 0,
+      school: 'evo',
+      method: 'spell',
+      prepared: 1,
       activation: { type: 'action', value: 1 },
-      range: { value: 120 }, duration: { value: '' },
+      range: { value: 120 },
+      duration: { value: '' },
       properties: new Set(['vocal', 'somatic'])
     }
   };
   return {
-    id: 'actor00000000001', name: 'Kobold', type: 'npc', img: 'k.webp',
-    hasPlayerOwner: false, folder: null, ownership: {}, flags: {},
+    id: 'actor00000000001',
+    name: 'Kobold',
+    type: 'npc',
+    img: 'k.webp',
+    hasPlayerOwner: false,
+    folder: null,
+    ownership: {},
+    flags: {},
     prototypeToken: { texture: { src: 't.webp', scaleX: 1 }, disposition: -1 },
     system: {
       attributes: { hp: { value: 0, max: 5 }, ac: { value: 12 } },
@@ -43,10 +56,15 @@ function dnd5eNpc() {
       spells: {}
     },
     items: collection([spell]),
-    effects: [{
-      id: 'effect0000000001', name: 'Poisoned', img: 'icons/poison.svg',
-      disabled: false, duration: { value: null, units: 'seconds' }
-    }]
+    effects: [
+      {
+        id: 'effect0000000001',
+        name: 'Poisoned',
+        img: 'icons/poison.svg',
+        disabled: false,
+        duration: { value: null, units: 'seconds' }
+      }
+    ]
   };
 }
 
@@ -77,7 +95,12 @@ describe('ActorsAPI with dnd5e 6.x data', () => {
     expect(spell.prepared).toBe(true);
     expect(spell.method).toBe('spell');
     expect(spell.castingTime).toBe(1);
-    expect(spell.components).toEqual({ verbal: true, somatic: true, material: false, concentration: false });
+    expect(spell.components).toEqual({
+      verbal: true,
+      somatic: true,
+      material: false,
+      concentration: false
+    });
   });
 
   test('uses ActiveEffect#img for the effect icon', () => {
@@ -86,7 +109,10 @@ describe('ActorsAPI with dnd5e 6.x data', () => {
   });
 
   test('reports the prepared skill total beside the proficiency multiplier (#6)', () => {
-    const skills = api.formatSkills({ prc: { value: 1, total: 5, bonus: 0, passive: 15 }, ste: { value: 0 } });
+    const skills = api.formatSkills({
+      prc: { value: 1, total: 5, bonus: 0, passive: 15 },
+      ste: { value: 0 }
+    });
     expect(skills.prc).toMatchObject({ value: 1, total: 5, passive: 15 });
     expect(skills.ste.total).toBeNull();
   });
@@ -103,8 +129,15 @@ describe('ItemsAPI with v14 effects and dnd5e 6.x items', () => {
 
   test('reads weight.value and the source label', () => {
     const summary = api.formatItemSummary({
-      id: 'item000000000001', name: 'Rope', type: 'loot', img: 'r.webp',
-      system: { weight: { value: 10, units: 'lb' }, price: { value: 1, denomination: 'gp' }, source: { label: 'PHB' } }
+      id: 'item000000000001',
+      name: 'Rope',
+      type: 'loot',
+      img: 'r.webp',
+      system: {
+        weight: { value: 10, units: 'lb' },
+        price: { value: 1, denomination: 'gp' },
+        source: { label: 'PHB' }
+      }
     });
     expect(summary.weight).toBe(10);
     expect(summary.source).toBe('PHB');
@@ -113,28 +146,60 @@ describe('ItemsAPI with v14 effects and dnd5e 6.x items', () => {
   test('search keeps the id of actor-owned items, whose id is a getter (#6)', () => {
     // Document#id is a prototype getter over _id; an object spread drops it.
     class FakeItem {
-      constructor(data) { Object.assign(this, data); }
-      get id() { return this._id; }
+      constructor(data) {
+        Object.assign(this, data);
+      }
+      get id() {
+        return this._id;
+      }
     }
-    const owned = new FakeItem({ _id: 'owned00000000001', name: 'Dagger', type: 'weapon', system: {} });
+    const owned = new FakeItem({
+      _id: 'owned00000000001',
+      name: 'Dagger',
+      type: 'weapon',
+      system: {}
+    });
     global.game = {
       items: new Map(),
       actors: new Map([['a1', { id: 'a1', name: 'Kobold', items: new Map([[owned.id, owned]]) }]])
     };
     let body;
-    const res = { json: (data) => { body = data; return res; }, status: () => res };
+    const res = {
+      json: (data) => {
+        body = data;
+        return res;
+      },
+      status: () => res
+    };
 
     api.searchItems({ query: {} }, res);
 
-    expect(body.data[0]).toMatchObject({ id: 'owned00000000001', name: 'Dagger', owner: { id: 'a1', name: 'Kobold' } });
+    expect(body.data[0]).toMatchObject({
+      id: 'owned00000000001',
+      name: 'Dagger',
+      owner: { id: 'a1', name: 'Kobold' }
+    });
   });
 
   test('reads effect changes from system.changes and the icon from img', () => {
     const changes = [{ key: 'system.attributes.ac.bonus', type: 'add', value: '1' }];
     const detail = api.formatItemDetail({
-      id: 'item000000000002', name: 'Ring', type: 'equipment', img: 'ring.webp', flags: {},
+      id: 'item000000000002',
+      name: 'Ring',
+      type: 'equipment',
+      img: 'ring.webp',
+      flags: {},
       system: {},
-      effects: [{ id: 'e1', name: 'Protection', img: 'p.svg', disabled: false, transfer: true, system: { changes } }]
+      effects: [
+        {
+          id: 'e1',
+          name: 'Protection',
+          img: 'p.svg',
+          disabled: false,
+          transfer: true,
+          system: { changes }
+        }
+      ]
     });
     expect(detail.effects[0]).toMatchObject({ name: 'Protection', icon: 'p.svg', changes });
   });
@@ -142,27 +207,39 @@ describe('ItemsAPI with v14 effects and dnd5e 6.x items', () => {
 
 describe('scene images on v14 Levels and v13 scenes', () => {
   const v14Scene = {
-    shiftX: 10, shiftY: -5,
+    shiftX: 10,
+    shiftY: -5,
     initialLevel: {
       background: { src: 'maps/level0.webp' },
       foreground: { src: 'maps/roof.webp' },
       textures: { scaleX: 2, scaleY: 3 }
     },
     // v14 keeps a deprecated getter that logs a warning; reaching it is a failure here.
-    get background() { throw new Error('Scene#background is deprecated'); },
-    get foreground() { throw new Error('Scene#foreground is deprecated'); }
+    get background() {
+      throw new Error('Scene#background is deprecated');
+    },
+    get foreground() {
+      throw new Error('Scene#foreground is deprecated');
+    }
   };
 
   test('v14: reads images from the initial Level without touching deprecated getters', () => {
     expect(sceneBackgroundSrc(v14Scene)).toBe('maps/level0.webp');
     expect(sceneForegroundSrc(v14Scene)).toBe('maps/roof.webp');
     expect(formatSceneBackground(v14Scene)).toEqual({
-      src: 'maps/level0.webp', offsetX: 10, offsetY: -5, scaleX: 2, scaleY: 3
+      src: 'maps/level0.webp',
+      offsetX: 10,
+      offsetY: -5,
+      scaleX: 2,
+      scaleY: 3
     });
   });
 
   test('v13: falls back to Scene#background and Scene#foreground', () => {
-    const v13Scene = { background: { src: 'maps/old.webp', scaleX: 1, scaleY: 1 }, foreground: 'maps/fg.webp' };
+    const v13Scene = {
+      background: { src: 'maps/old.webp', scaleX: 1, scaleY: 1 },
+      foreground: 'maps/fg.webp'
+    };
     expect(sceneBackgroundSrc(v13Scene)).toBe('maps/old.webp');
     expect(sceneForegroundSrc(v13Scene)).toBe('maps/fg.webp');
   });

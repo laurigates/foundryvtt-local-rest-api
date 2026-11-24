@@ -21,5 +21,5 @@ export function listenLoopback(app) {
 }
 
 export function close(server) {
-  return new Promise(resolve => server.close(() => resolve()));
+  return new Promise((resolve) => server.close(() => resolve()));
 }

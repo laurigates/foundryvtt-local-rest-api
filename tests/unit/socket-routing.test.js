@@ -17,7 +17,8 @@ function usersOf(list) {
       const qualifying = list.filter(condition);
       if (qualifying.length === 0) return null;
       return qualifying.reduce((best, u) =>
-        (u.role > best.role || (u.role === best.role && u.id < best.id)) ? u : best);
+        u.role > best.role || (u.role === best.role && u.id < best.id) ? u : best
+      );
     }
   };
 }
@@ -79,7 +80,10 @@ describe('socket routing', () => {
 
   describe('responseEmitArgs', () => {
     test('answers on the request event, flagged, to the sender only', () => {
-      const [event, payload, options] = responseEmitArgs({ requestId: 'r1', success: true }, 'aaaaBridgeUser01');
+      const [event, payload, options] = responseEmitArgs(
+        { requestId: 'r1', success: true },
+        'aaaaBridgeUser01'
+      );
       expect(event).toBe(SOCKET_NAME);
       expect(payload).toEqual({ requestId: 'r1', success: true, isResponse: true });
       expect(options).toEqual({ recipients: ['aaaaBridgeUser01'] });

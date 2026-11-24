@@ -14,7 +14,7 @@ export class PermissionValidator {
       GAMEMASTER: 4
     };
 
-    // Document Permission Levels  
+    // Document Permission Levels
     this.DOCUMENT_PERMISSIONS = {
       NONE: 0,
       LIMITED: 1,
@@ -76,7 +76,8 @@ export class PermissionValidator {
 
     // Fallback to ownership checking
     const permissionLevel = this.getDocumentPermissionLevel(user, document);
-    const requiredLevel = this.OPERATION_PERMISSIONS[operation] || this.DOCUMENT_PERMISSIONS.OBSERVER;
+    const requiredLevel =
+      this.OPERATION_PERMISSIONS[operation] || this.DOCUMENT_PERMISSIONS.OBSERVER;
 
     if (permissionLevel < requiredLevel) {
       return {
@@ -98,9 +99,9 @@ export class PermissionValidator {
   getDocumentPermissionLevel(user, document) {
     if (!document.ownership) {
       // If no ownership data, check if user owns it
-      return document.user === user.id ? 
-        this.DOCUMENT_PERMISSIONS.OWNER : 
-        this.DOCUMENT_PERMISSIONS.NONE;
+      return document.user === user.id
+        ? this.DOCUMENT_PERMISSIONS.OWNER
+        : this.DOCUMENT_PERMISSIONS.NONE;
     }
 
     // Check specific user permission
@@ -125,7 +126,7 @@ export class PermissionValidator {
       update: this.USER_ROLES.PLAYER,
       delete: this.USER_ROLES.PLAYER,
       roll: this.USER_ROLES.PLAYER, // Dice rolling
-      chat: this.USER_ROLES.PLAYER  // Chat messages
+      chat: this.USER_ROLES.PLAYER // Chat messages
     };
 
     const requiredRole = minimumRoles[operation] || this.USER_ROLES.PLAYER;
@@ -182,13 +183,13 @@ export class PermissionValidator {
    */
   filterByPermission(user, collection, operation = 'read') {
     const items = Array.from(collection.values ? collection.values() : collection);
-    
+
     // GMs see everything
     if (user.isGM) {
       return items;
     }
 
-    return items.filter(item => {
+    return items.filter((item) => {
       const permission = this.validateDocumentPermission(user, item, operation);
       return permission.success;
     });
@@ -207,7 +208,7 @@ export class PermissionValidator {
     }
 
     const permissionLevel = this.getDocumentPermissionLevel(user, document);
-    
+
     // Remove sensitive fields based on permission level
     const sanitized = { ...data };
 
@@ -221,7 +222,7 @@ export class PermissionValidator {
       // Remove detailed system data from limited users
       delete sanitized.flags;
       delete sanitized.effects;
-      
+
       // Limit system data
       if (sanitized.system) {
         sanitized.system = this.sanitizeSystemData(sanitized.system, permissionLevel);
@@ -254,7 +255,7 @@ export class PermissionValidator {
 
     // For limited permission, return only basic visible stats
     const publicData = {};
-    
+
     // Common visible attributes
     const visiblePaths = [
       'attributes.hp',
@@ -356,7 +357,7 @@ export class PermissionValidator {
    */
   wouldModifyPermissions(updates) {
     const sensitiveFields = ['ownership', 'permission', 'permissions', 'role', 'isGM'];
-    
+
     for (const field of sensitiveFields) {
       if (field in updates) {
         return true;
@@ -380,7 +381,10 @@ export class PermissionValidator {
    */
   validatePermissionModification(user, document, updates) {
     // Only owners and GMs can modify permissions
-    if (!user.isGM && this.getDocumentPermissionLevel(user, document) < this.DOCUMENT_PERMISSIONS.OWNER) {
+    if (
+      !user.isGM &&
+      this.getDocumentPermissionLevel(user, document) < this.DOCUMENT_PERMISSIONS.OWNER
+    ) {
       return {
         success: false,
         error: 'Forbidden',

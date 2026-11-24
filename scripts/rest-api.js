@@ -143,7 +143,7 @@ class FoundryLocalRestAPI {
     try {
       // Only setup the socket handlers once - no bridge needed
       this.setupSocketHandlers();
-      
+
       this.isEnabled = true;
 
       ui.notifications.info(
