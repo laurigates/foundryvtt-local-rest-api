@@ -65,13 +65,15 @@ describe('FoundrySocketClient.getMessageType', () => {
     ['/api/diagnostics/logs', 'diagnostics.logs'],
     ['/api/diagnostics/search', 'diagnostics.search'],
     ['/api/diagnostics/health', 'diagnostics.health'],
-    ['/api/diagnostics/errors', 'diagnostics.errors']
+    ['/api/diagnostics/errors', 'diagnostics.errors'],
+    ['/api/compendium/search', 'compendium.search']
   ])('maps GET %s to %s', (endpoint, type) => {
     expect(client.getMessageType(endpoint, 'GET')).toBe(type);
   });
 
   test('does not read a diagnostics or compendium action as a route id', () => {
     expect(client.extractRouteParams('/api/diagnostics/logs')).toEqual({});
+    expect(client.extractRouteParams('/api/compendium/search')).toEqual({});
     expect(client.extractRouteParams('/api/actors/abc123')).toEqual({ id: 'abc123' });
   });
 });

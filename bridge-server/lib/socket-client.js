@@ -419,6 +419,7 @@ export class FoundrySocketClient extends EventEmitter {
     if (path === '/status' && method === 'GET') return 'status';
     const diagnostics = path.match(/^\/diagnostics\/(logs|search|health|errors)$/);
     if (diagnostics && method === 'GET') return `diagnostics.${diagnostics[1]}`;
+    if (path === '/compendium/search' && method === 'GET') return 'compendium.search';
     
     // Default mapping
     const resource = path.split('/')[1] || 'unknown';

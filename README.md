@@ -38,6 +38,8 @@ This solution consists of two components that work together:
 - 🎒 **Item Catalog** - `/api/items` - Search equipment, spells, and consumables
 - 🗺️ **Scene Information** - `/api/scenes` - Access scene data and current scene
 - 🌍 **World Data** - `/api/world` - Get world info, statistics, and system details
+- 📚 **Compendium Search** - `/api/compendium/search` - Search compendium pack indexes
+- 🩺 **Diagnostics** - `/api/diagnostics/*` - Recent logs, log search, health and error summary
 
 ### Advanced Features
 - **Real-time Integration** - Hooks into FoundryVTT's live game state
@@ -223,6 +225,61 @@ Response:
   }
 }
 ```
+
+#### 📚 Compendium Search
+
+**GET** `/api/compendium/search?query=fire&packType=Item&itemType=spell&spellLevel=3&source=2014&compendiumId=dnd5e.spells&limit=20&offset=0`
+
+Searches the indexes of the compendium packs the answering user can see. Every
+parameter is optional:
+
+| Parameter | Matches |
+|-----------|---------|
+| `query` | Entry name, case-insensitive substring |
+| `packType` | The pack's document type (`Item`, `Actor`, `JournalEntry`, ...) |
+| `itemType` | The entry's `type` (`spell`, `weapon`, `npc`, ...) |
+| `spellLevel` | `system.level`, 0 to 9 |
+| `source` | Substring of `system.source.rules`, `.book` or `.custom` |
+| `compendiumId` | The pack id, e.g. `dnd5e.spells` |
+| `limit`, `offset` | Paging: `limit` 1 to 100 (default 20), `offset` from 0 (default 0) |
+
+The response uses the same `{success, data, total, query}` shape as the other
+search routes. `data` is the page of entries at `offset`, `total` counts every
+match, and `query` echoes the validated parameters:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "compendiumId": "dnd5e.spells",
+      "itemId": "fireball00000001",
+      "name": "Fireball",
+      "type": "spell",
+      "img": "path/to/fireball.webp",
+      "system": { "level": 3, "school": "evo", "source": { "rules": "2014" } }
+    }
+  ],
+  "total": 1,
+  "query": { "query": "fire", "spellLevel": 3, "limit": 20, "offset": 0 }
+}
+```
+
+`img` and each `system` field are left out when the index has no value for
+them, never sent as `null`. Entries of document types without a `type` field
+(a `JournalEntry`, say) report the pack's document type instead.
+
+#### 🩺 Diagnostics
+
+**GET** `/api/diagnostics/logs?lines=50&level=error&since=<ISO time>&source=module&includeStack=false`
+**GET** `/api/diagnostics/search?pattern=TypeError&timeframe=3600&level=error&caseSensitive=false`
+**GET** `/api/diagnostics/health`
+**GET** `/api/diagnostics/errors?timeframe=3600`
+
+These read the log buffer the module keeps in the answering browser and answer
+in the `{success, data}` envelope. Optional fields (`stack`, `server.uptime`,
+`performance.memory`) are omitted when absent; in a browser there is no
+process uptime or memory figure to report.
 
 ### Error Handling
 

@@ -20,6 +20,7 @@ import { createDiceRouter } from './routes/dice.js';
 import { createScenesRouter } from './routes/scenes.js';
 import { createWorldRouter } from './routes/world.js';
 import { createDiagnosticsRouter } from './routes/diagnostics.js';
+import { createCompendiumRouter } from './routes/compendium.js';
 
 // Load environment variables
 dotenv.config();
@@ -169,6 +170,7 @@ class BridgeServer {
     this.app.use('/api/scenes', createScenesRouter(this.socketClient));
     this.app.use('/api/world', createWorldRouter(this.socketClient));
     this.app.use('/api/diagnostics', createDiagnosticsRouter(this.socketClient));
+    this.app.use('/api/compendium', createCompendiumRouter(this.socketClient));
 
     // Root endpoint
     this.app.get('/', (req, res) => {
@@ -183,7 +185,8 @@ class BridgeServer {
           dice: '/api/dice/roll',
           scenes: '/api/scenes',
           world: '/api/world',
-          diagnostics: '/api/diagnostics'
+          diagnostics: '/api/diagnostics',
+          compendium: '/api/compendium/search'
         },
         documentation: 'https://github.com/yourusername/foundryvtt-local-rest-api#bridge-server'
       });
@@ -210,7 +213,8 @@ class BridgeServer {
           'GET /api/diagnostics/search',
           'GET /api/diagnostics/health',
           'GET /api/diagnostics/errors',
-          'GET /api/diagnostics/connection'
+          'GET /api/diagnostics/connection',
+          'GET /api/compendium/search'
         ]
       });
     });

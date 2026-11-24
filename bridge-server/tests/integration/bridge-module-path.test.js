@@ -19,6 +19,7 @@ import request from 'supertest';
 import { FoundrySocketClient } from '../../lib/socket-client.js';
 import { createActorsRouter } from '../../routes/actors.js';
 import { createDiagnosticsRouter } from '../../routes/diagnostics.js';
+import { createCompendiumRouter } from '../../routes/compendium.js';
 import { SocketMessageHandler } from '../../../scripts/socket-handler.js';
 import { SOCKET_NAME, isResponseMessage, responseEmitArgs } from '../../../scripts/socket-routing.js';
 
@@ -88,6 +89,7 @@ function bridgeWithModule() {
   app.use('/api', (req, res, next) => { req.apiKey = API_KEY; next(); });
   app.use('/api/actors', createActorsRouter(client));
   app.use('/api/diagnostics', createDiagnosticsRouter(client));
+  app.use('/api/compendium', createCompendiumRouter(client));
   return { app, client, moduleHandler };
 }
 
@@ -183,6 +185,30 @@ describe('bridge to module path', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.timeframe).toBe('600 seconds');
+    });
+  });
+
+  describe('compendium (#6)', () => {
+    test('GET /api/compendium/search returns matching index entries', async () => {
+      const res = await request(app).get('/api/compendium/search')
+        .query({ query: 'fire', limit: 20, offset: 0 });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        success: true,
+        data: [{
+          compendiumId: 'dnd5e.spells', itemId: 'fireball00000001', name: 'Fireball',
+          type: 'spell', img: 'fireball.webp', system: { level: 3, school: 'evo' }
+        }],
+        total: 1,
+        query: { query: 'fire', limit: 20, offset: 0 }
+      });
+    });
+
+    test('GET /api/compendium/search answers 400 for a limit the module rejects', async () => {
+      const res = await request(app).get('/api/compendium/search').query({ limit: 1000 });
+
+      expect(res.status).toBe(400);
     });
   });
 });

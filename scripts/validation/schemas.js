@@ -96,6 +96,70 @@ export class ValidationSchemas {
   }
 
   /**
+   * Validate and sanitize compendium search parameters
+   * (GET /api/compendium/search). Values arrive from HTTP as strings.
+   */
+  validateCompendiumSearch(params) {
+    const errors = [];
+    const sanitized = {};
+
+    const strings = {
+      query: this.LIMITS.MAX_QUERY_LENGTH,
+      packType: this.LIMITS.MAX_TYPE_LENGTH,
+      itemType: this.LIMITS.MAX_TYPE_LENGTH,
+      source: this.LIMITS.MAX_QUERY_LENGTH
+    };
+    for (const [field, maxLength] of Object.entries(strings)) {
+      if (params[field] === undefined) continue;
+      // Lenient sanitising applies to the search text only
+      const validation = this.validateString(params[field], field === 'query' ? 'query' : field, maxLength);
+      if (!validation.valid) {
+        errors.push(validation.error);
+      } else if (validation.value !== '') {
+        sanitized[field] = validation.value;
+      }
+    }
+
+    if (params.compendiumId !== undefined) {
+      const idValidation = this.validateId(params.compendiumId, 'compendiumId');
+      if (!idValidation.valid) {
+        errors.push(idValidation.error);
+      } else {
+        sanitized.compendiumId = idValidation.value;
+      }
+    }
+
+    if (params.spellLevel !== undefined) {
+      const levelValidation = this.validateNumber(params.spellLevel, 'spellLevel', 0, 9);
+      if (!levelValidation.valid) {
+        errors.push(levelValidation.error);
+      } else {
+        sanitized.spellLevel = levelValidation.value;
+      }
+    }
+
+    const paging = { limit: [1, this.LIMITS.MAX_RESULTS, 20], offset: [0, 100000, 0] };
+    for (const [field, [min, max, fallback]] of Object.entries(paging)) {
+      if (params[field] === undefined) {
+        sanitized[field] = fallback;
+        continue;
+      }
+      const validation = this.validateNumber(params[field], field, min, max);
+      if (!validation.valid) {
+        errors.push(validation.error);
+      } else {
+        sanitized[field] = validation.value;
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      data: sanitized
+    };
+  }
+
+  /**
    * Validate and sanitize dice roll parameters
    */
   validateDiceRoll(body) {
