@@ -1,5 +1,7 @@
 # Foundry Local REST API
 
+![FoundryVTT REST API — your game data, over local HTTP](docs/assets/banner.webp)
+
 A **purely local** REST API solution for FoundryVTT that provides HTTP endpoints for external integrations without relying on third-party relay services. This two-component system enables secure, local-only access to actors, items, scenes, dice rolling, and world data.
 
 ## Architecture Overview
