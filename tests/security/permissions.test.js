@@ -227,6 +227,61 @@ describe('Permission Security', () => {
     });
   });
 
+  describe('Diagnostics Permissions (#16)', () => {
+    // logs, search and errors all return captured log entries, stack traces
+    // included, so they share the Assistant gate; health needs Trusted.
+    const required = {
+      'diagnostics.logs': 3,
+      'diagnostics.search': 3,
+      'diagnostics.errors': 3,
+      'diagnostics.health': 2
+    };
+    const stubs = {
+      'diagnostics.logs': 'getRecentLogs',
+      'diagnostics.search': 'searchLogs',
+      'diagnostics.errors': 'diagnoseErrors',
+      'diagnostics.health': 'getSystemHealth'
+    };
+
+    beforeEach(() => {
+      // Role gating only: stub the routes so the allowed case needs no
+      // diagnostics fixtures.
+      for (const method of Object.values(stubs)) {
+        jest.spyOn(socketHandler.handlers.diagnostics, method)
+          .mockImplementation((req, res) => res.json({ success: true, data: { stub: method } }));
+      }
+    });
+
+    test.each(Object.entries(required))('%s refuses a user one role below the gate', async (type, role) => {
+      mockUser.role = role - 1;
+
+      const response = await socketHandler.handleMessage({
+        type,
+        requestId: 'req123',
+        auth: { apiKey: 'test-api-key' },
+        params: { query: { pattern: '.' }, params: {} }
+      });
+
+      expect(response.success).toBe(false);
+      expect(response.error).toBe('Forbidden');
+      expect(socketHandler.handlers.diagnostics[stubs[type]]).not.toHaveBeenCalled();
+    });
+
+    test.each(Object.entries(required))('%s answers a user at the gate', async (type, role) => {
+      mockUser.role = role;
+
+      const response = await socketHandler.handleMessage({
+        type,
+        requestId: 'req123',
+        auth: { apiKey: 'test-api-key' },
+        params: { query: { pattern: '.' }, params: {} }
+      });
+
+      expect(response.success).toBe(true);
+      expect(response.data.data.stub).toBe(stubs[type]);
+    });
+  });
+
   describe('Permission Bypass Attempts', () => {
     test('should prevent permission escalation through API', async () => {
       // Attempt to modify actor permissions directly

@@ -287,7 +287,9 @@ export class SocketMessageHandler {
       'scenes.current': 'scenes.current',
       'scenes.list': 'scenes.list',
       'diagnostics.health': 'diagnostics.health',
-      'diagnostics.logs': 'diagnostics.logs'
+      'diagnostics.logs': 'diagnostics.logs',
+      'diagnostics.search': 'diagnostics.search',
+      'diagnostics.errors': 'diagnostics.errors'
     };
     
     if (systemOps[type]) {

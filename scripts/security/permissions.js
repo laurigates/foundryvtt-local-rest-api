@@ -153,7 +153,10 @@ export class PermissionValidator {
       'scenes.list': this.USER_ROLES.TRUSTED,
       'scenes.modify': this.USER_ROLES.ASSISTANT,
       'system.settings': this.USER_ROLES.GAMEMASTER,
+      // search and errors return the same log entries as logs, stacks included
       'diagnostics.logs': this.USER_ROLES.ASSISTANT,
+      'diagnostics.search': this.USER_ROLES.ASSISTANT,
+      'diagnostics.errors': this.USER_ROLES.ASSISTANT,
       'diagnostics.health': this.USER_ROLES.TRUSTED
     };
 
