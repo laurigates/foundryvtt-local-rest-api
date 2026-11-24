@@ -26,6 +26,7 @@ import { createScenesRouter } from '../../routes/scenes.js';
 import { createWorldRouter } from '../../routes/world.js';
 import { SocketMessageHandler } from '../../../scripts/socket-handler.js';
 import { SOCKET_NAME, isResponseMessage, responseEmitArgs } from '../../../scripts/socket-routing.js';
+import { listenLoopback, close } from '../helpers/loopback.js';
 
 const API_KEY = 'test-api-key-bridge-module';
 
@@ -102,23 +103,26 @@ function bridgeWithModule() {
 }
 
 describe('bridge to module path', () => {
-  let app;
+  let server;
   let client;
   let moduleHandler;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     installGame();
+    let app;
     ({ app, client, moduleHandler } = bridgeWithModule());
+    server = await listenLoopback(app);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     client.disconnect();
     delete globalThis.game;
+    await close(server);
   });
 
   describe('actors (#8)', () => {
     test('GET /api/actors/:id returns that actor', async () => {
-      const res = await request(app).get('/api/actors/orc0000000000001');
+      const res = await request(server).get('/api/actors/orc0000000000001');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -126,23 +130,23 @@ describe('bridge to module path', () => {
     });
 
     test('GET /api/actors/:id answers 404 for an unknown actor', async () => {
-      const res = await request(app).get('/api/actors/missing000000001');
+      const res = await request(server).get('/api/actors/missing000000001');
 
       expect(res.status).toBe(404);
     });
 
     test('GET /api/actors applies query and limit', async () => {
-      const byName = await request(app).get('/api/actors').query({ query: 'goblin' });
+      const byName = await request(server).get('/api/actors').query({ query: 'goblin' });
       expect(byName.status).toBe(200);
       expect(byName.body.data.map(a => a.name)).toEqual(['Goblin', 'Goblin Boss']);
       expect(byName.body.total).toBe(2);
 
-      const limited = await request(app).get('/api/actors').query({ limit: 1 });
+      const limited = await request(server).get('/api/actors').query({ limit: 1 });
       expect(limited.body.data).toHaveLength(1);
     });
 
     test('GET /api/actors answers 400 for a limit the module rejects', async () => {
-      const res = await request(app).get('/api/actors').query({ limit: 500 });
+      const res = await request(server).get('/api/actors').query({ limit: 500 });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -157,7 +161,7 @@ describe('bridge to module path', () => {
 
       // The module captures console output, the bridge's own included (one
       // process here), so filter on the level of the seeded entry.
-      const res = await request(app).get('/api/diagnostics/logs').query({ lines: 10, level: 'warn' });
+      const res = await request(server).get('/api/diagnostics/logs').query({ lines: 10, level: 'warn' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -172,14 +176,14 @@ describe('bridge to module path', () => {
         { timestamp: new Date().toISOString(), level: 'log', message: 'fine', source: 'unknown' }
       ];
 
-      const res = await request(app).get('/api/diagnostics/search').query({ pattern: 'TypeError' });
+      const res = await request(server).get('/api/diagnostics/search').query({ pattern: 'TypeError' });
 
       expect(res.status).toBe(200);
       expect(res.body.data).toMatchObject({ matches: 1, pattern: 'TypeError' });
     });
 
     test('GET /api/diagnostics/health returns the health report', async () => {
-      const res = await request(app).get('/api/diagnostics/health');
+      const res = await request(server).get('/api/diagnostics/health');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toMatchObject({
@@ -189,7 +193,7 @@ describe('bridge to module path', () => {
     });
 
     test('GET /api/diagnostics/errors returns the error diagnosis', async () => {
-      const res = await request(app).get('/api/diagnostics/errors').query({ timeframe: 600 });
+      const res = await request(server).get('/api/diagnostics/errors').query({ timeframe: 600 });
 
       expect(res.status).toBe(200);
       expect(res.body.data.timeframe).toBe('600 seconds');
@@ -214,7 +218,7 @@ describe('bridge to module path', () => {
     ])('GET %s answers 403 to a Player', async (path, query) => {
       globalThis.game.user = { id: 'player000000001', name: 'Player', role: 1, isGM: false };
 
-      const res = await request(app).get(path).query(query);
+      const res = await request(server).get(path).query(query);
 
       expect(res.status).toBe(403);
       expect(res.body).toMatchObject({ success: false, error: 'Forbidden' });
@@ -241,8 +245,8 @@ describe('bridge to module path', () => {
       moduleHandler.setApiKey('a-different-key');
 
       const res = method === 'post'
-        ? await request(app).post(path).send({ formula: '1d20' })
-        : await request(app).get(path);
+        ? await request(server).post(path).send({ formula: '1d20' })
+        : await request(server).get(path);
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({ success: false, error: 'Unauthorized' });
@@ -251,7 +255,7 @@ describe('bridge to module path', () => {
 
   describe('compendium (#6)', () => {
     test('GET /api/compendium/search returns matching index entries', async () => {
-      const res = await request(app).get('/api/compendium/search')
+      const res = await request(server).get('/api/compendium/search')
         .query({ query: 'fire', limit: 20, offset: 0 });
 
       expect(res.status).toBe(200);
@@ -267,7 +271,7 @@ describe('bridge to module path', () => {
     });
 
     test('GET /api/compendium/search answers 400 for a limit the module rejects', async () => {
-      const res = await request(app).get('/api/compendium/search').query({ limit: 1000 });
+      const res = await request(server).get('/api/compendium/search').query({ limit: 1000 });
 
       expect(res.status).toBe(400);
     });
