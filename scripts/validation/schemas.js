@@ -29,9 +29,24 @@ export class ValidationSchemas {
       xss: /<[^>]*>|javascript:|on\w+\s*=|<script|<\/script>|<iframe|<embed|<object/gi,
       command: /(\||;|`|\$\(|&&|\|\||>>|<<|\\n|\\r)/g,
       path: /(\.\.\/|\.\.\\|%2e%2e|%252e|\.%2e|%2e\.)/gi,
-      template: /(\{\{|\}\}|\$\{|\}|\<%|\%>)/g,
+      template: /(\{\{|\}\}|\$\{|\}|<%|%>)/g,
+      // Control characters are the point of this pattern
+      // eslint-disable-next-line no-control-regex
       unicode: /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\uFEFF]/g
     };
+  }
+
+  /**
+   * Test a DANGEROUS_PATTERNS entry against a value.
+   *
+   * The patterns carry the `g` flag (sanitizeString also uses them with
+   * replace), and RegExp#test on a global regex resumes from lastIndex left by
+   * the previous call. Without the reset, a match moved lastIndex forward and
+   * the next value checked against the same pattern could pass unchecked.
+   */
+  matchesPattern(pattern, value) {
+    pattern.lastIndex = 0;
+    return pattern.test(value);
   }
 
   /**
@@ -145,7 +160,7 @@ export class ValidationSchemas {
 
     // Check for dangerous patterns
     for (const [name, pattern] of Object.entries(this.DANGEROUS_PATTERNS)) {
-      if (pattern.test(formula)) {
+      if (this.matchesPattern(pattern, formula)) {
         return { valid: false, error: `Invalid formula: contains forbidden ${name} patterns` };
       }
     }
@@ -182,17 +197,17 @@ export class ValidationSchemas {
     }
 
     // Check for path traversal attempts
-    if (this.DANGEROUS_PATTERNS.path.test(id)) {
+    if (this.matchesPattern(this.DANGEROUS_PATTERNS.path, id)) {
       return { valid: false, error: `Invalid ${fieldName}: contains path traversal patterns` };
     }
 
     // Check for injection attempts
-    if (this.DANGEROUS_PATTERNS.sql.test(id) || this.DANGEROUS_PATTERNS.command.test(id)) {
+    if (this.matchesPattern(this.DANGEROUS_PATTERNS.sql, id) || this.matchesPattern(this.DANGEROUS_PATTERNS.command, id)) {
       return { valid: false, error: `Invalid ${fieldName}: contains forbidden characters` };
     }
 
     // FoundryVTT IDs are typically alphanumeric with some special chars
-    const validIdPattern = /^[a-zA-Z0-9_\-\.]+$/;
+    const validIdPattern = /^[a-zA-Z0-9_\-.]+$/;
     if (!validIdPattern.test(id)) {
       return { valid: false, error: `Invalid ${fieldName} format` };
     }
@@ -221,7 +236,7 @@ export class ValidationSchemas {
 
     // Check for injection attempts
     for (const [name, pattern] of Object.entries(this.DANGEROUS_PATTERNS)) {
-      if (pattern.test(sanitized)) {
+      if (this.matchesPattern(pattern, sanitized)) {
         // For search queries, we can be more lenient and just sanitize
         if (fieldName === 'query' && name !== 'xss') {
           sanitized = sanitized.replace(pattern, '');
