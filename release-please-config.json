@@ -5,6 +5,7 @@
     ".": {
       "release-type": "node",
       "package-name": "foundryvtt-local-rest-api",
+      "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md"
     }
   },
