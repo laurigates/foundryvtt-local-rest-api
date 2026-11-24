@@ -192,6 +192,9 @@ jobs:
       - name: Run ESLint
         run: npx eslint scripts bridge-server
 
+      - name: Check formatting (Biome)
+        run: npm run format:check
+
   # osv-scanner over both package-lock.json files. Reports advisories in the job
   # summary and as annotations, and does not fail the build while advisories
   # from before this job existed remain (fail-on-high is off). On a PR it runs

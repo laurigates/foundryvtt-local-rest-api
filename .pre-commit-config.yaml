@@ -39,3 +39,12 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
+
+  # Uses the Biome pinned in package.json, so hook and CI share one version.
+  - repo: local
+    hooks:
+      - id: biome-format
+        name: Biome format
+        entry: npx --no-install biome format --write --no-errors-on-unmatched
+        language: system
+        types: [javascript]

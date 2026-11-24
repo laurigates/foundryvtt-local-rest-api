@@ -27,6 +27,11 @@ coverage:
 # Lint module and bridge server
 lint:
     npx eslint scripts bridge-server
+    npm run format:check
+
+# Format JavaScript with Biome
+format:
+    npm run format
 
 # Scan module and bridge server for unused files, exports and dependencies
 knip:

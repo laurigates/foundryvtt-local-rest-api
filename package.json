@@ -11,7 +11,9 @@
     "test:coverage": "jest --coverage",
     "test:all": "npm test && cd bridge-server && npm test",
     "knip": "knip",
-    "test:production": "node test-production.js"
+    "test:production": "node test-production.js",
+    "format": "biome format --write .",
+    "format:check": "biome format ."
   },
   "repository": {
     "type": "git",
@@ -37,6 +39,7 @@
   "devDependencies": {
     "@babel/core": "^7.28.3",
     "@babel/preset-env": "^7.28.3",
+    "@biomejs/biome": "2.6.9",
     "@eslint/js": "^9.39.5",
     "@testing-library/dom": "^9.3.0",
     "babel-jest": "^30.0.5",
