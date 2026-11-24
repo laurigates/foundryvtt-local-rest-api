@@ -1,0 +1,24 @@
+// Knip dead-code scan for both package roots (module + bridge-server/).
+// Run: `npm run knip` or `just knip`. Not wired into CI or the default pre-commit stage.
+// The ignore entries below are the baseline of findings that existed when Knip
+// was added; each one is listed in the baseline GitHub issue. Remove an entry
+// when its finding is fixed so Knip guards against a regression.
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/rest-api.js", "scripts/build.js", "scripts/http-server.js"],
+      "project": ["scripts/**/*.js", "tests/**/*.js"],
+      "ignore": ["tests/mocks/foundry-mocks.js"],
+      "ignoreDependencies": ["@testing-library/dom", "socket.io-mock", "@jest/globals"]
+    },
+    "bridge-server": {
+      "entry": ["server.js", "run-e2e-test.js", "test-connection.js"],
+      "project": ["**/*.js"],
+      "ignoreDependencies": ["nock", "@jest/globals"]
+    }
+  },
+  "ignoreIssues": {
+    "scripts/routes/compendium.js": ["exports"]
+  }
+}
