@@ -6,6 +6,13 @@
 import { AuthManager } from './auth.js';
 import { SocketMessageHandler } from './socket-handler.js';
 import { SocketBridge } from './socket-bridge.js';
+import { createApiConfigApp } from './api-config-app.js';
+import {
+  SOCKET_NAME,
+  isResponseMessage,
+  shouldHandleRequest,
+  responseEmitArgs
+} from './socket-routing.js';
 
 class FoundryLocalRestAPI {
   constructor() {
@@ -79,7 +86,7 @@ class FoundryLocalRestAPI {
       name: game.i18n.localize('foundryvtt-local-rest-api.settings.api-config.name'),
       hint: game.i18n.localize('foundryvtt-local-rest-api.settings.api-config.hint'),
       icon: 'fas fa-key',
-      type: ApiConfigurationForm,
+      type: createApiConfigApp(foundry.applications.api),
       restricted: true
     });
   }
@@ -162,9 +169,10 @@ class FoundryLocalRestAPI {
     console.log('Foundry Local REST API | Disabling socket handlers...');
     this.isEnabled = false;
 
-    // Remove socket listeners
-    if (game.socket) {
-      game.socket.off(`module.foundryvtt-local-rest-api`);
+    // Remove our socket listener
+    if (game.socket && this.socketListener) {
+      game.socket.off(SOCKET_NAME, this.socketListener);
+      this.socketListener = null;
     }
 
     ui.notifications.info(
@@ -180,29 +188,39 @@ class FoundryLocalRestAPI {
       throw new Error('Game socket not available');
     }
 
-    // Listen for messages on the module namespace
-    game.socket.on(`module.foundryvtt-local-rest-api`, async (data) => {
-      try {
-        const response = await this.socketHandler.handleMessage(data);
-        
-        // Emit response back to the sender
-        game.socket.emit(`module.foundryvtt-local-rest-api.response`, response);
-      } catch (error) {
-        console.error('Foundry Local REST API | Error handling socket message:', error);
-        
-        // Send error response
-        const errorResponse = {
-          requestId: data.requestId,
-          success: false,
-          error: 'Internal Server Error',
-          message: error.message
-        };
-        
-        game.socket.emit(`module.foundryvtt-local-rest-api.response`, errorResponse);
-      }
-    });
+    this.socketListener = (data, senderId) => this.onSocketMessage(data, senderId);
+    game.socket.on(SOCKET_NAME, this.socketListener);
 
     console.log('Foundry Local REST API | Socket handlers registered');
+  }
+
+  /**
+   * Answer one request received on the module socket.
+   *
+   * Responses go back on the same event (the server relays no other), only
+   * to the sender, and only from the designated active GM so that one client
+   * answers each request.
+   *
+   * @param {object} data       The message
+   * @param {string} [senderId] The sending user's id, passed by Foundry's server
+   */
+  async onSocketMessage(data, senderId) {
+    if (isResponseMessage(data)) return;
+    if (!shouldHandleRequest(game.users, senderId)) return;
+
+    let response;
+    try {
+      response = await this.socketHandler.handleMessage(data);
+    } catch (error) {
+      console.error('Foundry Local REST API | Error handling socket message:', error);
+      response = {
+        requestId: data?.requestId,
+        success: false,
+        error: 'Internal Server Error',
+        message: error.message
+      };
+    }
+    game.socket.emit(...responseEmitArgs(response, senderId));
   }
 }
 
@@ -211,134 +229,5 @@ Hooks.once('init', () => {
   FoundryLocalRestAPI.initialize();
 });
 
-/**
- * Configuration form for API settings
- */
-class ApiConfigurationForm extends FormApplication {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'foundryvtt-local-rest-api-config',
-      title: game.i18n.localize('foundryvtt-local-rest-api.config.title'),
-      template: 'modules/foundryvtt-local-rest-api/templates/api-config.hbs',
-      width: 500,
-      height: 'auto',
-      closeOnSubmit: false,
-      submitOnChange: false,
-      resizable: true
-    });
-  }
-
-  getData() {
-    const apiKey = game.settings.get('foundryvtt-local-rest-api', 'api-key');
-    const isEnabled = game.settings.get('foundryvtt-local-rest-api', 'enable-api');
-    
-    return {
-      apiKey: apiKey || 'No API key generated',
-      hasApiKey: !!apiKey,
-      isEnabled,
-      baseUrl: 'http://localhost:3030/api',
-      socketNamespace: 'module.foundryvtt-local-rest-api',
-      bridgeInfo: 'Use with bridge server for REST API endpoints'
-    };
-  }
-
-  activateListeners(html) {
-    super.activateListeners(html);
-    
-    html.find('#copy-api-key').click(this._onCopyApiKey.bind(this));
-    html.find('#regenerate-api-key').click(this._onRegenerateApiKey.bind(this));
-    html.find('#test-connection').click(this._onTestConnection.bind(this));
-  }
-
-  async _onCopyApiKey(event) {
-    event.preventDefault();
-    const apiKey = game.settings.get('foundryvtt-local-rest-api', 'api-key');
-    
-    try {
-      await navigator.clipboard.writeText(apiKey);
-      ui.notifications.info(game.i18n.localize('foundryvtt-local-rest-api.config.api-key-copied'));
-    } catch (err) {
-      ui.notifications.error(game.i18n.localize('foundryvtt-local-rest-api.config.copy-failed'));
-    }
-  }
-
-  async _onRegenerateApiKey(event) {
-    event.preventDefault();
-    
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: game.i18n.localize('foundryvtt-local-rest-api.config.regenerate-confirm-title') },
-      content: `<p>${game.i18n.localize('foundryvtt-local-rest-api.config.regenerate-confirm-content')}</p>`,
-      yes: { label: game.i18n.localize('foundryvtt-local-rest-api.config.regenerate') },
-      no: { label: game.i18n.localize('foundryvtt-local-rest-api.config.cancel') }
-    });
-
-    if (confirmed) {
-      window.foundryLocalRestAPI.generateApiKey();
-      this.render();
-    }
-  }
-
-  async _onTestConnection(event) {
-    event.preventDefault();
-    const apiKey = game.settings.get('foundryvtt-local-rest-api', 'api-key');
-    
-    if (!window.foundryLocalRestAPI.isEnabled) {
-      ui.notifications.warn('Socket handlers are not enabled. Please enable the API first.');
-      return;
-    }
-    
-    try {
-      // Test socket communication directly
-      const testMessage = {
-        type: 'status',
-        requestId: foundry.utils.randomID(),
-        auth: { apiKey }
-      };
-      
-      // Listen for response
-      const responsePromise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Test timeout'));
-        }, 5000);
-        
-        const responseHandler = (response) => {
-          if (response.requestId === testMessage.requestId) {
-            clearTimeout(timeout);
-            game.socket.off(`module.foundryvtt-local-rest-api.response`, responseHandler);
-            resolve(response);
-          }
-        };
-        
-        game.socket.on(`module.foundryvtt-local-rest-api.response`, responseHandler);
-      });
-      
-      // Send test message
-      game.socket.emit(`module.foundryvtt-local-rest-api`, testMessage);
-      
-      // Wait for response
-      const response = await responsePromise;
-      
-      if (response.success) {
-        ui.notifications.info(game.i18n.format('foundryvtt-local-rest-api.config.test-success', { 
-          status: response.data.status, 
-          version: response.data.version 
-        }));
-      } else {
-        ui.notifications.error(game.i18n.format('foundryvtt-local-rest-api.config.test-failed', { 
-          error: response.error 
-        }));
-      }
-    } catch (error) {
-      ui.notifications.error(game.i18n.format('foundryvtt-local-rest-api.config.test-error', { 
-        error: error.message 
-      }));
-    }
-  }
-
-  async _updateObject(event, formData) {
-    // This form is read-only, no updates needed
-  }
-}
-
 // Export for external access
-export { FoundryLocalRestAPI, ApiConfigurationForm };
+export { FoundryLocalRestAPI };

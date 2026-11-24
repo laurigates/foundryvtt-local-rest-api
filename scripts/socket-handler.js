@@ -12,6 +12,7 @@ import { DiceAPI } from './routes/dice.js';
 import { ScenesAPI } from './routes/scenes.js';
 import { WorldAPI } from './routes/world.js';
 import { DiagnosticsAPI } from './routes/diagnostics.js';
+import { CompendiumAPI } from './routes/compendium.js';
 
 export class SocketMessageHandler {
   constructor() {
@@ -26,7 +27,8 @@ export class SocketMessageHandler {
       dice: new DiceAPI(),
       scenes: new ScenesAPI(),
       world: new WorldAPI(),
-      diagnostics: new DiagnosticsAPI()
+      diagnostics: new DiagnosticsAPI(),
+      compendium: new CompendiumAPI()
     };
 
     // Register v13 Query handlers for RPC-style communication
@@ -50,10 +52,9 @@ export class SocketMessageHandler {
       };
     }
 
-    // Also register legacy socket handler for backward compatibility with bridge
-    if (game?.socket?.on) {
-      game.socket.on('module.foundryvtt-local-rest-api', this.handleMessage.bind(this));
-    }
+    // The module socket listener is owned by FoundryLocalRestAPI.setupSocketHandlers,
+    // which respects the enable-api setting and sends the response. Registering
+    // handleMessage here as well ran every request twice and discarded one result.
   }
 
   /**
@@ -160,8 +161,10 @@ export class SocketMessageHandler {
 
       this.logRequest(messageType, true, user);
 
-      // Route message to appropriate handler with validated data
-      const result = await this.routeMessage(messageType, validation.data, body, user);
+      // Route message to appropriate handler with validated data. For dice the
+      // validated (sanitised) body replaces the raw one.
+      const routedBody = messageType === 'dice.roll' ? validation.data : body;
+      const result = await this.routeMessage(messageType, validation.data, routedBody, user);
       return this.createSuccessResponse(requestId, result);
 
     } catch (error) {
@@ -188,6 +191,8 @@ export class SocketMessageHandler {
       return 'dice.roll';
     } else if (parts[0] === 'diagnostics') {
       return `diagnostics.${parts[1] || 'health'}`;
+    } else if (parts[0] === 'compendium' && parts[1] === 'search') {
+      return 'compendium.search';
     }
     
     return null;
@@ -215,7 +220,12 @@ export class SocketMessageHandler {
   }
 
   /**
-   * Validate input based on message type
+   * Validate input based on message type.
+   *
+   * The bridge sends `params: {query: <HTTP query>, params: <route params>}`
+   * (FoundrySocketClient.sendRequest); a direct caller may put the id at
+   * `params.id`. Search validators return flat fields, which are passed on as
+   * the request query so the route reads them from `req.query`.
    */
   async validateInput(type, params, body) {
     const [category, action] = type.split('.');
@@ -223,9 +233,9 @@ export class SocketMessageHandler {
     switch (category) {
       case 'actors':
         if (action === 'search') {
-          return this.validationSchemas.validateActorSearch(params.query || params);
+          return this.asQuery(this.validationSchemas.validateActorSearch(params.query || params));
         } else if (action === 'get') {
-          const idValidation = this.validationSchemas.validateId(params.id);
+          const idValidation = this.validationSchemas.validateId(params.params?.id ?? params.id);
           return {
             valid: idValidation.valid,
             errors: idValidation.valid ? [] : [idValidation.error],
@@ -240,6 +250,12 @@ export class SocketMessageHandler {
         }
         break;
         
+      case 'compendium':
+        if (action === 'search') {
+          return this.asQuery(this.validationSchemas.validateCompendiumSearch(params.query || {}));
+        }
+        break;
+
       case 'items':
       case 'scenes':
         // Similar validation patterns
@@ -250,6 +266,13 @@ export class SocketMessageHandler {
     }
     
     return { valid: true, errors: [], data: params };
+  }
+
+  /**
+   * Wrap a search validator's flat result as the request query.
+   */
+  asQuery(validation) {
+    return { ...validation, data: { query: validation.data, params: {} } };
   }
 
   /**
@@ -264,7 +287,9 @@ export class SocketMessageHandler {
       'scenes.current': 'scenes.current',
       'scenes.list': 'scenes.list',
       'diagnostics.health': 'diagnostics.health',
-      'diagnostics.logs': 'diagnostics.logs'
+      'diagnostics.logs': 'diagnostics.logs',
+      'diagnostics.search': 'diagnostics.search',
+      'diagnostics.errors': 'diagnostics.errors'
     };
     
     if (systemOps[type]) {
@@ -333,6 +358,9 @@ export class SocketMessageHandler {
       case 'diagnostics':
         await this.routeDiagnosticsMessage(handler, action, mockReq, mockRes);
         break;
+      case 'compendium':
+        await this.routeCompendiumMessage(handler, action, mockReq, mockRes);
+        break;
       default:
         throw new Error(`Unknown API category: ${category}`);
     }
@@ -341,12 +369,18 @@ export class SocketMessageHandler {
     
     // Apply permission-based data sanitization
     if (category === 'actors' && responseData) {
-      if (Array.isArray(responseData)) {
-        // Filter collection by permissions
-        const filtered = this.permissionValidator.filterByPermission(user, responseData, 'read');
-        return filtered.map(actor => 
-          this.permissionValidator.sanitizeDocumentData(user, actor, actor)
-        );
+      if (Array.isArray(responseData.data)) {
+        // Search results are summaries; check each against its actor document.
+        // GMs see everything, as in PermissionValidator.filterByPermission.
+        if (!user?.isGM) {
+          const readable = responseData.data
+            .map(summary => ({ summary, actor: game.actors.get(summary.id) }))
+            .filter(({ actor }) => actor &&
+              this.permissionValidator.validateDocumentPermission(user, actor, 'read').success);
+          responseData.data = readable.map(({ summary, actor }) =>
+            this.permissionValidator.sanitizeDocumentData(user, actor, summary));
+          responseData.total = responseData.data.length;
+        }
       } else if (responseData.data) {
         // Sanitize single actor data
         const actor = game.actors.get(params.id);
@@ -467,6 +501,19 @@ export class SocketMessageHandler {
         break;
       default:
         throw new Error(`Unknown diagnostics action: ${action}`);
+    }
+  }
+
+  /**
+   * Route compendium messages
+   */
+  async routeCompendiumMessage(handler, action, req, res) {
+    switch (action) {
+      case 'search':
+        await handler.searchCompendium(req, res);
+        break;
+      default:
+        throw new Error(`Unknown compendium action: ${action}`);
     }
   }
 

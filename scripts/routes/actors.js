@@ -2,6 +2,33 @@
  * Actors API endpoints for the Foundry Local REST API
  */
 
+/**
+ * Flatten a dnd5e source field to a label. dnd5e 4+ stores `system.source`
+ * as an object ({book, page, custom, ...}) with a prepared `label`; older data
+ * used a plain string under `details.source`.
+ * @param {string|object|undefined} source
+ * @returns {string|null}
+ */
+export function formatSource(source) {
+  if (!source) return null;
+  if (typeof source === 'string') return source;
+  return source.label || source.custom || source.book || null;
+}
+
+/**
+ * Whether a spell has a component. dnd5e 3+ keeps components in the
+ * `properties` Set; older data used `components.<name>` booleans.
+ * @param {object} system  The spell's system data
+ * @param {string} name    vocal | somatic | material | concentration
+ * @returns {boolean}
+ */
+export function hasSpellProperty(system, name) {
+  const props = system?.properties;
+  if (props instanceof Set) return props.has(name);
+  if (Array.isArray(props)) return props.includes(name);
+  return Boolean(system?.components?.[name]);
+}
+
 export class ActorsAPI {
 
   /**
@@ -95,14 +122,15 @@ export class ActorsAPI {
       name: actor.name,
       type: actor.type,
       img: actor.img,
-      level: system.details?.level || system.level || null,
+      // `??`, not `||`: 0 HP and CR 0 are real values.
+      level: system.details?.level ?? system.level ?? null,
       hp: {
-        current: system.attributes?.hp?.value || system.hp?.value || null,
-        max: system.attributes?.hp?.max || system.hp?.max || null
+        current: system.attributes?.hp?.value ?? system.hp?.value ?? null,
+        max: system.attributes?.hp?.max ?? system.hp?.max ?? null
       },
-      ac: system.attributes?.ac?.value || system.ac?.value || null,
-      cr: system.details?.cr || system.cr || null,
-      source: system.details?.source || null,
+      ac: system.attributes?.ac?.value ?? system.ac?.value ?? null,
+      cr: system.details?.cr ?? system.cr ?? null,
+      source: formatSource(system.source ?? system.details?.source),
       isPC: actor.hasPlayerOwner,
       folder: actor.folder?.name || null
     };
@@ -139,8 +167,8 @@ export class ActorsAPI {
       flags: actor.flags,
       effects: Array.from(actor.effects || []).map(effect => ({
         id: effect.id,
-        name: effect.name || effect.label,
-        icon: effect.icon,
+        name: effect.name,
+        icon: effect.img,
         disabled: effect.disabled,
         duration: effect.duration
       }))
@@ -158,7 +186,8 @@ export class ActorsAPI {
         formatted[key] = {
           value: ability.value || 10,
           modifier: ability.mod || Math.floor((ability.value - 10) / 2),
-          save: ability.save || null,
+          // dnd5e 4+ prepares `save` as an object; its total is `save.value`.
+          save: (typeof ability.save === 'object' ? ability.save?.value : ability.save) ?? null,
           proficient: ability.proficient || false
         };
       }
@@ -176,7 +205,9 @@ export class ActorsAPI {
     for (const [key, skill] of Object.entries(skills)) {
       if (skill && typeof skill === 'object') {
         formatted[key] = {
+          // dnd5e: `value` is the proficiency multiplier, `total` the prepared modifier
           value: skill.value || 0,
+          total: skill.total ?? null,
           proficient: skill.proficient || false,
           bonus: skill.bonus || 0,
           passive: skill.passive || 10
@@ -211,15 +242,18 @@ export class ActorsAPI {
         name: spell.name,
         level: level,
         school: spell.system?.school || '',
-        prepared: spell.system?.preparation?.prepared || false,
-        castingTime: spell.system?.activation?.cost || '',
+        // dnd5e 5+: `prepared` is a number (0 no, 1 prepared, 2 always) and
+        // `method` replaces `preparation.mode`; components are `properties`.
+        prepared: (spell.system?.prepared ?? spell.system?.preparation?.prepared ?? 0) > 0,
+        method: spell.system?.method ?? spell.system?.preparation?.mode ?? null,
+        castingTime: spell.system?.activation?.value ?? spell.system?.activation?.cost ?? '',
         range: spell.system?.range?.value || '',
         duration: spell.system?.duration?.value || '',
         components: {
-          verbal: spell.system?.components?.vocal || false,
-          somatic: spell.system?.components?.somatic || false,
-          material: spell.system?.components?.material || false,
-          concentration: spell.system?.components?.concentration || false
+          verbal: hasSpellProperty(spell.system, 'vocal'),
+          somatic: hasSpellProperty(spell.system, 'somatic'),
+          material: hasSpellProperty(spell.system, 'material'),
+          concentration: hasSpellProperty(spell.system, 'concentration')
         }
       });
     });
