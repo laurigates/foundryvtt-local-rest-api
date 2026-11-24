@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded runs on the same ref (a new push to a PR branch)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-module:
     name: Test FoundryVTT Module
@@ -94,12 +99,13 @@ jobs:
           fail_ci_if_error: false
 
   e2e-tests:
-    name: End-to-End Tests
+    name: End-to-End Tests (placeholder, see #10)
     runs-on: ubuntu-latest
     needs: [test-module, test-bridge]
-    # Needs foundryvtt.com credentials and a module install step that does not
-    # exist yet (see the placeholder below), so it runs only on manual dispatch
-    # and is skipped on pushes and PRs.
+    # Not implemented (issue #10): needs foundryvtt.com credentials and a
+    # module install step that does not exist yet. It runs only on manual
+    # dispatch, is skipped on pushes and PRs, and the "Install module" step
+    # below fails on purpose so a dispatched run cannot read as a pass.
     if: github.event_name == 'workflow_dispatch'
     
     services:
@@ -145,10 +151,10 @@ jobs:
             sleep 2
           done
       
-      - name: Install module in FoundryVTT
+      - name: Install module in FoundryVTT (not implemented, #10)
         run: |
-          # This would typically be done via FoundryVTT's API or by copying files
-          echo "Module installation would happen here"
+          echo "::error::E2E is a placeholder: the module is never installed in FoundryVTT. See issue #10."
+          exit 1
       
       - name: Start bridge server
         working-directory: ./bridge-server
@@ -186,22 +192,18 @@ jobs:
       - name: Run ESLint
         run: npx eslint scripts bridge-server
 
+  # osv-scanner over both package-lock.json files. Reports advisories in the job
+  # summary and as annotations, and does not fail the build while advisories
+  # from before this job existed remain (fail-on-high is off). On a PR it runs
+  # only when a lockfile changed. Replaces `npm audit` with continue-on-error,
+  # which could never fail.
   security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
-      
-      - name: Run npm audit in bridge server
-        working-directory: ./bridge-server
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
+    name: Dependency Audit
+    uses: laurigates/.github/.github/workflows/reusable-security-deps.yml@main
+    permissions:
+      contents: read
+    with:
+      fail-on-high: false
 
   build:
     name: Build Module

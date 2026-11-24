@@ -18,15 +18,15 @@ export default {
     '!**/tests/**',
     '!tests/unit/socket-handler.test.js'
   ],
-  // Floor at the measured coverage (2026-11: statements 31.9, branches 28.3,
-  // functions 26.0, lines 32.9) so CI catches a drop. The earlier 50% target
-  // had never been met: CI failed before reaching the coverage step.
+  // Floor just below the measured coverage (2026-11-24, `npm run test:coverage`:
+  // statements 54.77, branches 51.78, functions 53.96, lines 54.43) so CI
+  // catches a drop. Raise it when coverage rises.
   coverageThreshold: {
     global: {
-      branches: 28,
-      functions: 26,
-      lines: 32,
-      statements: 31
+      branches: 51,
+      functions: 53,
+      lines: 54,
+      statements: 54
     }
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
