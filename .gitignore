@@ -100,3 +100,9 @@ module.json
 
 # Local script that reads bridge-server/.env and hits a running instance
 test-production.js
+
+# Claude Code runtime state (managed by /configure:gitignore)
+.claude/worktrees/
+/worktrees/
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
