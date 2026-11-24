@@ -321,11 +321,12 @@ describe('E2E API Flow Tests', () => {
 
       // Handle specific error scenarios for testing
       if (params?.params?.id === 'nonexistent') {
+        // What SocketMessageHandler.checkPermissions returns for a missing actor
         response = {
           requestId,
           success: false,
           error: 'Not Found',
-          message: 'Resource not found'
+          message: 'Actor not found'
         };
       } else if (params?.params?.id === 'server_error') {
         response = {
@@ -335,22 +336,24 @@ describe('E2E API Flow Tests', () => {
           message: 'Mock server error for testing'
         };
       } else if (body?.formula === 'invalid_formula') {
+        // What the module returns when ValidationSchemas rejects a formula
         response = {
           requestId,
           success: false,
-          error: 'Invalid Formula',
+          error: 'Validation Error',
           message: 'Invalid dice formula syntax'
         };
       } else {
         // Return mock response based on message type
         const mockData = mockResponses[type];
         if (mockData) {
-          // If mockData already has success/data structure, extract just the data
-          const responseData = mockData.data !== undefined ? mockData.data : mockData;
+          // The module's SocketMessageHandler puts the route's whole
+          // {success, data} payload in the envelope's data field, and the
+          // bridge returns that payload as the HTTP body.
           response = {
             requestId,
             success: true,
-            data: responseData
+            data: mockData
           };
         } else {
           response = {
@@ -761,7 +764,8 @@ describe('E2E API Flow Tests', () => {
       expect(responses[1].body.data).toEqual(mockResponses['items.search'].data);
       expect(responses[2].body.data).toEqual(mockResponses['scenes.search'].data);
       expect(responses[3].body.data).toEqual(mockResponses['world.info'].data);
-      expect(responses[4].body.data.formula).toBe('1d6');
+      // The mock module answers every dice.roll with the same fixture
+      expect(responses[4].body.data).toEqual(mockResponses['dice.roll'].data);
     });
 
     it('should handle mixed authentication scenarios in concurrent requests', async () => {
@@ -924,7 +928,14 @@ class BridgeServer {
     }));
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-    this.app.use('/api', this.authManager.authenticate);
+    // Same wiring as server.js: under the /api mount req.path is '/status',
+    // which AuthManager.authenticate's own '/api/status' check never sees.
+    this.app.use('/api', (req, res, next) => {
+      if (req.path === '/status') {
+        return next();
+      }
+      this.authManager.authenticate(req, res, next);
+    });
   }
 
   async setupRoutes() {

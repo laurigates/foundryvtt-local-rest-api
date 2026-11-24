@@ -51,8 +51,10 @@ export function createDiceRouter(socketClient) {
     } catch (error) {
       console.error('[DiceRouter] Error rolling dice:', error.message);
       
-      // Handle specific dice rolling errors
-      if (error.message.includes('Invalid Formula') || error.message.includes('Bad Request')) {
+      // Handle specific dice rolling errors. The module rejects a bad formula
+      // with error 'Validation Error'; socket-client puts that in error.code
+      // and the detail ("Invalid dice formula syntax") in error.message.
+      if (error.code === 'Validation Error' || error.message.includes('Invalid Formula') || error.message.includes('Bad Request')) {
         res.status(400).json({
           success: false,
           error: 'Invalid Dice Formula',

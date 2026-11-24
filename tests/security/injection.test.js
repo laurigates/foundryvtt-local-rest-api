@@ -31,41 +31,55 @@ describe('Injection Attack Prevention', () => {
   });
 
   describe('Timing Attack Prevention', () => {
-    test('should use constant-time comparison for API keys', async () => {
+    // Wall-clock timing of a JIT-compiled loop is too noisy to assert on in
+    // CI (the old 20%-variance check failed by 3-4x on a quiet machine).
+    // Assert the property that makes the comparison constant-time instead:
+    // every key is compared through constantTimeEquals, which reads every
+    // character pair rather than returning at the first mismatch.
+    test('should compare API keys through constantTimeEquals', () => {
       const validKey = 'test-api-key-with-sufficient-length-for-testing';
+      const spy = jest.spyOn(authManager, 'constantTimeEquals');
+
       const attempts = [
         'test-api-key-with-sufficient-length-for-testinG', // Last char different
         'Test-api-key-with-sufficient-length-for-testing', // First char different
-        'test-api-key-with-sufficient-length-for-testong', // Middle char different
-        'short', // Very different length
-        validKey // Valid key
+        'short', // Different length
+        validKey
       ];
-
-      const timings = [];
-
       for (const key of attempts) {
-        const iterations = 100;
-        const times = [];
-
-        for (let i = 0; i < iterations; i++) {
-          const start = process.hrtime.bigint();
-          const result = authManager.validateApiKey(key);
-          const end = process.hrtime.bigint();
-          times.push(Number(end - start));
-        }
-
-        const avgTime = times.reduce((a, b) => a + b) / times.length;
-        timings.push({ key: key === validKey ? 'valid' : 'invalid', avgTime });
+        authManager.validateApiKey(key);
       }
 
-      // Check that timing differences are minimal (< 20% variance)
-      const validTiming = timings.find(t => t.key === 'valid').avgTime;
-      const maxVariance = validTiming * 0.2;
-
-      for (const timing of timings) {
-        const difference = Math.abs(timing.avgTime - validTiming);
-        expect(difference).toBeLessThan(maxVariance);
+      expect(spy).toHaveBeenCalledTimes(attempts.length);
+      for (const key of attempts) {
+        expect(spy).toHaveBeenCalledWith(key, validKey);
       }
+      spy.mockRestore();
+    });
+
+    test('should read every character regardless of where keys differ', () => {
+      const validKey = 'test-api-key-with-sufficient-length-for-testing';
+      const firstDiffers = 'Xest-api-key-with-sufficient-length-for-testing';
+      const lastDiffers = 'test-api-key-with-sufficient-length-for-testinX';
+
+      const countCharReads = (a, b) => {
+        const spy = jest.spyOn(String.prototype, 'charCodeAt');
+        const result = authManager.constantTimeEquals(a, b);
+        const reads = spy.mock.calls.length;
+        spy.mockRestore();
+        return { result, reads };
+      };
+
+      const first = countCharReads(firstDiffers, validKey);
+      const last = countCharReads(lastDiffers, validKey);
+      const same = countCharReads(validKey, validKey);
+
+      expect(first.result).toBe(false);
+      expect(last.result).toBe(false);
+      expect(same.result).toBe(true);
+      expect(first.reads).toBe(validKey.length * 2);
+      expect(last.reads).toBe(first.reads);
+      expect(same.reads).toBe(first.reads);
     });
   });
 
@@ -124,6 +138,8 @@ describe('Injection Attack Prevention', () => {
         'setInterval("malicious()", 1000)',
         'constructor.constructor("return process.exit()")()'
       ];
+      // Observe process.exit without letting a call end the test run
+      const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
 
       for (const injection of codeInjections) {
         const request = {
@@ -137,11 +153,13 @@ describe('Injection Attack Prevention', () => {
         
         // Should reject without executing
         expect(response.success).toBe(false);
-        expect(response.error).toContain('Invalid');
+        expect(response.error).toBe('Validation Error');
+        expect(response.message).toMatch(/invalid/i);
         
         // Process should still be running
-        expect(process.exit).not.toHaveBeenCalled();
+        expect(exitSpy).not.toHaveBeenCalled();
       }
+      exitSpy.mockRestore();
     });
   });
 
@@ -167,7 +185,7 @@ describe('Injection Attack Prevention', () => {
         
         // Should sanitize special characters
         expect(response.success).toBe(true);
-        expect(response.data).toEqual([]);
+        expect(response.data.data).toEqual([]);
       }
     });
   });
@@ -190,10 +208,11 @@ describe('Injection Attack Prevention', () => {
 
         const response = await socketHandler.handleMessage(request);
         
-        // Should not process XML entities
-        expect(response.success).toBe(true);
-        expect(response.data).toEqual([]);
-        expect(response.data.toString()).not.toContain('/etc/passwd');
+        // Markup is rejected by validation before any search runs
+        expect(response.success).toBe(false);
+        expect(response.error).toBe('Validation Error');
+        expect(response.message).toMatch(/forbidden xss patterns|too long/);
+        expect(JSON.stringify(response)).not.toContain('root:');
       }
     });
   });
@@ -219,8 +238,8 @@ describe('Injection Attack Prevention', () => {
         const response = await socketHandler.handleMessage(request);
         
         // Should not evaluate templates
-        if (response.success && response.data.length > 0) {
-          expect(response.data[0]).not.toContain('49'); // 7*7
+        if (response.success && response.data.data.length > 0) {
+          expect(JSON.stringify(response.data.data[0])).not.toContain('49'); // 7*7
         }
       }
     });
@@ -273,7 +292,7 @@ describe('Injection Attack Prevention', () => {
         
         // Should normalize or reject suspicious Unicode
         expect(response.success).toBe(true);
-        expect(response.data).toEqual([]);
+        expect(response.data.data).toEqual([]);
       }
     });
   });
@@ -299,9 +318,10 @@ describe('Injection Attack Prevention', () => {
         
         // Should cap or reject overflow values
         if (response.success) {
-          expect(response.data.length).toBeLessThanOrEqual(100);
+          expect(response.data.data.length).toBeLessThanOrEqual(100);
         } else {
-          expect(response.error).toContain('Invalid');
+          expect(response.error).toBe('Validation Error');
+          expect(response.message).toMatch(/limit/);
         }
       }
     });

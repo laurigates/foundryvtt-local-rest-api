@@ -157,11 +157,11 @@ export class AuthManager {
       const paddedA = (a + padding).slice(0, padding.length);
       const paddedB = (b + padding).slice(0, padding.length);
       
-      let result = 1; // Will return false
+      let result = 1; // Starts non-zero, so the comparison is always false
       for (let i = 0; i < padding.length; i++) {
         result |= paddedA.charCodeAt(i) ^ paddedB.charCodeAt(i);
       }
-      return false;
+      return result === 0;
     }
 
     let result = 0;
@@ -220,7 +220,6 @@ export class AuthManager {
   async rotateApiKey(user = null) {
     if (user) {
       // Rotate user key
-      const oldKey = this.getUserApiKey(user);
       const newKey = await this.generateUserApiKey(user);
       
       // Log rotation for audit

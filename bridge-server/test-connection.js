@@ -76,7 +76,6 @@ const colors = {
 };
 
 function log(level, message, data = null) {
-  const timestamp = new Date().toISOString();
   let color = colors.reset;
   let prefix = '';
   

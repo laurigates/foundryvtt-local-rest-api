@@ -109,8 +109,11 @@ export class SocketMessageHandler {
       messageType = this.mapEndpointToType(endpoint, params);
     }
     
-    // Merge query into params for compatibility
-    const mergedParams = { ...params, query: { ...params.query, ...query } };
+    // Merge query into params for compatibility. Destructuring defaults apply
+    // only to undefined, so a message with `params: null` (or another
+    // non-object) reached `params.query` and threw outside the try below.
+    const safeParams = params && typeof params === 'object' ? params : {};
+    const mergedParams = { ...safeParams, query: { ...safeParams.query, ...query } };
 
     try {
       // Validate request format
@@ -369,15 +372,9 @@ export class SocketMessageHandler {
         }
         await handler.getActor(req, res);
         break;
-      case 'update':
-        await handler.updateActor(req, res);
-        break;
-      case 'create':
-        await handler.createActor(req, res);
-        break;
-      case 'delete':
-        await handler.deleteActor(req, res);
-        break;
+      // The API is read-only: ActorsAPI has no update/create/delete methods.
+      // Cases that called them failed with "handler.updateActor is not a
+      // function"; such actions now fall through to the unknown-action error.
       default:
         throw new Error(`Unknown actors action: ${action}`);
     }
@@ -492,14 +489,18 @@ export class SocketMessageHandler {
     let responseData = null;
     let statusCode = 200;
 
-    return {
+    // json() and status() return the response object itself so handlers can
+    // chain them (res.status(404).json(...)), as with Express. Arrow functions
+    // returning `this` returned the SocketMessageHandler instead, so every
+    // handler error path threw "res.status(...).json is not a function".
+    const res = {
       json: (data) => {
         responseData = data;
-        return this;
+        return res;
       },
       status: (code) => {
         statusCode = code;
-        return this;
+        return res;
       },
       getData: () => {
         if (statusCode !== 200) {
@@ -508,6 +509,7 @@ export class SocketMessageHandler {
         return responseData;
       }
     };
+    return res;
   }
 
   /**

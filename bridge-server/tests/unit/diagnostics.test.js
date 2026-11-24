@@ -161,6 +161,8 @@ describe('Diagnostics Router', () => {
   
   describe('Error Categorization', () => {
     it('should properly categorize different error types', () => {
+      // Reference table only; categorizeError is not exercised here
+      // eslint-disable-next-line no-unused-vars
       const errorTypes = [
         {
           error: { code: 'ECONNREFUSED', message: 'Connection refused' },

@@ -261,7 +261,7 @@ export class FoundrySocketClient extends EventEmitter {
       }
       
       // Reject all pending requests
-      for (const [requestId, { reject }] of this.pendingRequests) {
+      for (const { reject } of this.pendingRequests.values()) {
         reject(new Error('Socket disconnected'));
       }
       this.pendingRequests.clear();
@@ -411,8 +411,9 @@ export class FoundrySocketClient extends EventEmitter {
     if (path === '/items' && method === 'GET') return 'items.search';
     if (path.match(/^\/items\/[\w-]+$/) && method === 'GET') return 'items.get';
     if (path === '/scenes' && method === 'GET') return 'scenes.search';
-    if (path.match(/^\/scenes\/[\w-]+$/) && method === 'GET') return 'scenes.get';
+    // Before the :id pattern, which also matches "current"
     if (path === '/scenes/current' && method === 'GET') return 'scenes.current';
+    if (path.match(/^\/scenes\/[\w-]+$/) && method === 'GET') return 'scenes.get';
     if (path === '/dice/roll' && method === 'POST') return 'dice.roll';
     if (path === '/world' && method === 'GET') return 'world.info';
     if (path === '/status' && method === 'GET') return 'status';
@@ -448,7 +449,7 @@ export class FoundrySocketClient extends EventEmitter {
     this.isConnected = false;
     
     // Clear pending requests
-    for (const [requestId, { timeout, reject }] of this.pendingRequests) {
+    for (const { timeout, reject } of this.pendingRequests.values()) {
       clearTimeout(timeout);
       reject(new Error('Client disconnected'));
     }

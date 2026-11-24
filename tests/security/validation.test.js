@@ -10,6 +10,7 @@ describe('Input Validation Security', () => {
   let socketHandler;
   let mockGame;
   let validationSchemas;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     // Setup mocks
@@ -23,7 +24,10 @@ describe('Input Validation Security', () => {
     };
 
     global.game = mockGame;
-    global.console.error = jest.fn();
+    // DiagnosticsAPI (built by SocketMessageHandler) replaces console.error
+    // with a capturing wrapper that forwards to the previous function, so
+    // keep a handle on the spy rather than reading console.error afterwards.
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     
     // Initialize handlers
     socketHandler = new SocketMessageHandler();
@@ -52,9 +56,11 @@ describe('Input Validation Security', () => {
         const response = await socketHandler.handleMessage(request);
         
         // Should not cause errors, should sanitize
+        // Search payloads are the route's {success, data} object inside the
+        // socket envelope, so the result list is response.data.data.
         expect(response.success).toBe(true);
-        expect(response.data).toEqual([]); // No results for malicious input
-        expect(console.error).not.toHaveBeenCalled();
+        expect(response.data.data).toEqual([]); // No results for malicious input
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
       }
     });
   });
@@ -114,7 +120,8 @@ describe('Input Validation Security', () => {
         
         // Should reject invalid formulas
         expect(response.success).toBe(false);
-        expect(response.error).toContain('Invalid Formula');
+        expect(response.error).toBe('Validation Error');
+        expect(response.message).toMatch(/invalid/i);
       }
     });
   });
@@ -138,9 +145,10 @@ describe('Input Validation Security', () => {
 
         const response = await socketHandler.handleMessage(request);
         
-        // Should not find actor with malicious ID
+        // Rejected by ID validation before any lookup
         expect(response.success).toBe(false);
-        expect(response.error).toContain('not found');
+        expect(response.error).toBe('Validation Error');
+        expect(response.message).toMatch(/invalid|path traversal/i);
       }
     });
   });
@@ -160,7 +168,8 @@ describe('Input Validation Security', () => {
       
       // Should reject or truncate overly long input
       expect(response.success).toBe(false);
-      expect(response.error).toContain('too long');
+      expect(response.error).toBe('Validation Error');
+      expect(response.message).toContain('too long');
     });
 
     test('should limit number of results', async () => {
@@ -173,8 +182,10 @@ describe('Input Validation Security', () => {
 
       const response = await socketHandler.handleMessage(request);
       
-      // Should cap at reasonable maximum
-      expect(response.data.length).toBeLessThanOrEqual(100);
+      // Limits above the maximum (100) are rejected rather than capped
+      expect(response.success).toBe(false);
+      expect(response.error).toBe('Validation Error');
+      expect(response.message).toContain('at most 100');
     });
   });
 
@@ -209,7 +220,7 @@ describe('Input Validation Security', () => {
         const response = await socketHandler.handleMessage(request);
         
         expect(response.success).toBe(false);
-        expect(response.error).toMatch(/Invalid|Bad Request/);
+        expect(response.error).toBe('Validation Error');
       }
     });
   });
@@ -264,9 +275,10 @@ describe('Input Validation Security', () => {
 
         const response = await socketHandler.handleMessage(request);
         
-        // Should not execute MongoDB-like queries
-        expect(response.success).toBe(false);
-        expect(response.error).toContain('Invalid');
+        // Search validation keeps only query/type/limit, so operator keys
+        // never reach the route: the search runs unfiltered and echoes none
+        expect(response.success).toBe(true);
+        expect(JSON.stringify(response.data.query)).not.toMatch(/\$/);
       }
     });
   });
@@ -297,7 +309,7 @@ describe('Input Validation Security', () => {
         expect(duration).toBeLessThan(1000);
         
         if (response.success) {
-          expect(response.data).toEqual([]);
+          expect(response.data.data).toEqual([]);
         }
       }
     });

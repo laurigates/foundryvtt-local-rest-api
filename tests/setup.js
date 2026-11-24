@@ -102,8 +102,14 @@ global.Roll = class Roll {
     this.data = data;
     this.total = null;
     this.dice = [];
+    this.terms = [];
   }
   
+  // Roll#evaluate is the API the module calls; roll() is kept for older tests
+  async evaluate() {
+    return this.roll();
+  }
+
   async roll() {
     // Simple mock roll implementation
     this.total = Math.floor(Math.random() * 20) + 1;

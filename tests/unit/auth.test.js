@@ -29,7 +29,7 @@ describe('FoundryVTT Module AuthManager', () => {
   
   describe('constructor', () => {
     test('should initialize with null API key', () => {
-      expect(authManager.currentApiKey).toBeNull();
+      expect(authManager.getCurrentApiKey()).toBeNull();
     });
     
     test('should create a new instance', () => {
@@ -83,11 +83,15 @@ describe('FoundryVTT Module AuthManager', () => {
       expect(apiKey).not.toContain('=');
     });
     
-    test('should set currentApiKey to generated key', () => {
+    test('should not store the generated key', () => {
+      // generateApiKey only produces a key; it is also used for one-off
+      // values such as API-user passwords. The key becomes active through
+      // setApiKey (rotateApiKey, or the api-key setting's onChange).
+      authManager.setApiKey('existing-key');
       const apiKey = authManager.generateApiKey();
       
-      expect(authManager.currentApiKey).toBe(apiKey);
-      expect(authManager.getCurrentApiKey()).toBe(apiKey);
+      expect(apiKey).toBe('MockedBase64String-_test');
+      expect(authManager.getCurrentApiKey()).toBe('existing-key');
     });
     
     test('should generate different keys on subsequent calls', () => {
@@ -111,7 +115,6 @@ describe('FoundryVTT Module AuthManager', () => {
       expect(firstKey).toBe('FirstKey-_');
       expect(secondKey).toBe('SecondKey-_');
       expect(firstKey).not.toBe(secondKey);
-      expect(authManager.currentApiKey).toBe(secondKey); // Should be updated to latest
     });
     
     test('should handle crypto.getRandomValues with actual random values', () => {
@@ -144,29 +147,29 @@ describe('FoundryVTT Module AuthManager', () => {
       
       authManager.setApiKey(testKey);
       
-      expect(authManager.currentApiKey).toBe(testKey);
+      expect(authManager.getCurrentApiKey()).toBe(testKey);
       expect(authManager.getCurrentApiKey()).toBe(testKey);
     });
     
     test('should update existing API key', () => {
       authManager.setApiKey('first-key');
-      expect(authManager.currentApiKey).toBe('first-key');
+      expect(authManager.getCurrentApiKey()).toBe('first-key');
       
       authManager.setApiKey('second-key');
-      expect(authManager.currentApiKey).toBe('second-key');
+      expect(authManager.getCurrentApiKey()).toBe('second-key');
     });
     
     test('should handle null values', () => {
       authManager.setApiKey('initial-key');
       authManager.setApiKey(null);
       
-      expect(authManager.currentApiKey).toBeNull();
+      expect(authManager.getCurrentApiKey()).toBeNull();
     });
     
     test('should handle empty string', () => {
       authManager.setApiKey('');
       
-      expect(authManager.currentApiKey).toBe('');
+      expect(authManager.getCurrentApiKey()).toBe('');
     });
   });
   
@@ -322,11 +325,13 @@ describe('FoundryVTT Module AuthManager', () => {
       expect(authManager.getCurrentApiKey()).toBe(testKey);
     });
     
-    test('should return generated key after generation', () => {
+    test('should return a generated key once it is set', () => {
       global.btoa = jest.fn(() => 'GeneratedKey+/=test');
       
       const generatedKey = authManager.generateApiKey();
+      expect(authManager.getCurrentApiKey()).toBeNull();
       
+      authManager.setApiKey(generatedKey);
       expect(authManager.getCurrentApiKey()).toBe(generatedKey);
       expect(authManager.getCurrentApiKey()).toBe('GeneratedKey-_test');
     });
@@ -340,7 +345,7 @@ describe('FoundryVTT Module AuthManager', () => {
       authManager.clearApiKey();
       
       expect(authManager.getCurrentApiKey()).toBeNull();
-      expect(authManager.currentApiKey).toBeNull();
+      expect(authManager.getCurrentApiKey()).toBeNull();
     });
     
     test('should work when no key is set', () => {
@@ -368,9 +373,10 @@ describe('FoundryVTT Module AuthManager', () => {
         return array;
       });
       
-      // Generate key
+      // Generate key and activate it
       const generatedKey = authManager.generateApiKey();
       expect(generatedKey).toBe('WorkflowKey-_');
+      authManager.setApiKey(generatedKey);
       
       // Validate generated key
       expect(authManager.validateApiKey(generatedKey)).toBe(true);
@@ -389,10 +395,12 @@ describe('FoundryVTT Module AuthManager', () => {
       
       const key1 = authManager.generateApiKey();
       expect(key1).toBe('Key1-_');
+      authManager.setApiKey(key1);
       expect(authManager.validateApiKey(key1)).toBe(true);
       
       const key2 = authManager.generateApiKey();
       expect(key2).toBe('Key2-_');
+      authManager.setApiKey(key2);
       expect(authManager.validateApiKey(key2)).toBe(true);
       expect(authManager.validateApiKey(key1)).toBe(false); // Old key invalid
       

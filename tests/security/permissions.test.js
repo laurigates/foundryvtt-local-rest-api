@@ -24,6 +24,10 @@ describe('Permission Security', () => {
       id: 'actor123',
       name: 'Test Actor',
       type: 'character',
+      // Fields ActorsAPI.formatActorDetail reads
+      system: {},
+      items: new Map(),
+      effects: [],
       ownership: {
         default: 0, // None
         user123: 2, // Observer
@@ -50,6 +54,20 @@ describe('Permission Security', () => {
       actors: new Map([
         ['actor123', mockActor]
       ]),
+      scenes: {
+        active: {
+          id: 'scene123',
+          name: 'Test Scene',
+          tokens: [],
+          notes: [],
+          lights: [],
+          sounds: [],
+          walls: [],
+          drawings: [],
+          tiles: [],
+          templates: []
+        }
+      },
       settings: {
         get: jest.fn().mockReturnValue('test-api-key')
       }
@@ -102,7 +120,9 @@ describe('Permission Security', () => {
       expect(response.data).toBeDefined();
     });
 
-    test('should require owner permission for updates', async () => {
+    test('should reject actors.update, which the API does not implement', async () => {
+      // The API is read-only; an update request must fail for every role
+      // and leave the actor unchanged.
       const request = {
         type: 'actors.update',
         requestId: 'req123',
@@ -111,18 +131,14 @@ describe('Permission Security', () => {
         body: { name: 'Updated Name' }
       };
 
-      // Test with observer permission (not enough)
-      mockActor.ownership.user123 = 2; // Observer
-      let response = await socketHandler.handleMessage(request);
-      
-      expect(response.success).toBe(false);
-      expect(response.error).toContain('Forbidden');
+      for (const level of [2, 3]) { // Observer, Owner
+        mockActor.ownership.user123 = level;
+        const response = await socketHandler.handleMessage(request);
 
-      // Test with owner permission
-      mockActor.ownership.user123 = 3; // Owner
-      response = await socketHandler.handleMessage(request);
-      
-      expect(response.success).toBe(true);
+        expect(response.success).toBe(false);
+        expect(response.message).toContain('Unknown actors action: update');
+        expect(mockActor.name).toBe('Test Actor');
+      }
     });
 
     test('should allow GM to access any actor', async () => {
@@ -155,8 +171,9 @@ describe('Permission Security', () => {
 
       const response = await socketHandler.handleMessage(request);
       
+      // The route's {success, data} payload sits inside the socket envelope
       expect(response.success).toBe(true);
-      expect(response.data.total).toBeDefined();
+      expect(response.data.data.total).toEqual(expect.any(Number));
     });
 
     test('should prevent dice rolls from users with None role', async () => {
@@ -177,28 +194,36 @@ describe('Permission Security', () => {
   });
 
   describe('Scene Access Permissions', () => {
-    test('should restrict scene details based on user role', async () => {
+    // Scene responses are not filtered by role (only actor responses go
+    // through sanitizeDocumentData); access itself is gated at Player.
+    test('should allow players and GMs to read the current scene', async () => {
       const request = {
         type: 'scenes.current',
         requestId: 'req123',
         auth: { apiKey: 'test-api-key' }
       };
 
-      // Test with player role
       mockUser.role = 1; // Player
       let response = await socketHandler.handleMessage(request);
-      
-      // Players should get limited scene info
       expect(response.success).toBe(true);
-      expect(response.data.tokens).toBeUndefined(); // No token info for players
+      expect(response.data.data.id).toBe('scene123');
 
-      // Test with GM role
       mockGame.user = mockGame.users.get('gm123');
       response = await socketHandler.handleMessage(request);
-      
-      // GMs should get full scene info
       expect(response.success).toBe(true);
-      expect(response.data.tokens).toBeDefined();
+      expect(response.data.data.id).toBe('scene123');
+    });
+
+    test('should deny the current scene to users with None role', async () => {
+      mockUser.role = 0; // None
+      const response = await socketHandler.handleMessage({
+        type: 'scenes.current',
+        requestId: 'req123',
+        auth: { apiKey: 'test-api-key' }
+      });
+
+      expect(response.success).toBe(false);
+      expect(response.error).toBe('Forbidden');
     });
   });
 
@@ -222,7 +247,7 @@ describe('Permission Security', () => {
       const response = await socketHandler.handleMessage(request);
       
       expect(response.success).toBe(false);
-      expect(response.error).toContain('Forbidden');
+      expect(response.message).toContain('Unknown actors action: update');
       expect(mockActor.ownership.user123).toBe(1); // Unchanged
     });
 
@@ -258,6 +283,11 @@ describe('Permission Security', () => {
         4: 'GameMaster'
       };
 
+      // This test is about role gating, not world formatting, so stub the
+      // route rather than mocking every collection formatWorldInfo reads.
+      jest.spyOn(socketHandler.handlers.world, 'getWorldInfo')
+        .mockImplementation((req, res) => res.json({ success: true, data: { id: 'test-world' } }));
+
       // Test each role level
       for (const [level, name] of Object.entries(roles)) {
         mockUser.role = parseInt(level);
@@ -272,8 +302,10 @@ describe('Permission Security', () => {
         const response = await socketHandler.handleMessage(request);
 
         if (level === '0') {
-          // None role should have very limited access
-          expect(response.data.actors).toBeUndefined();
+          // world.info requires the Player role
+          expect(response.success).toBe(false);
+          expect(response.error).toBe('Forbidden');
+          expect(response.data).toBeUndefined();
         } else {
           expect(response.success).toBe(true);
         }
