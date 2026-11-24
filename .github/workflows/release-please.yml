@@ -31,6 +31,7 @@ jobs:
     uses: laurigates/.github/.github/workflows/reusable-release-please.yml@main
     with:
       app-id: ${{ vars.RELEASE_PLEASE_CLIENT_ID }}
+      missed-release-check: error
     secrets:
       APP_PRIVATE_KEY: ${{ secrets.RELEASE_PLEASE_PRIVATE_KEY }}
 
