@@ -55,8 +55,8 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
-.env.test
+.env*
+!.env.example
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -97,3 +97,6 @@ module.json
 
 # Distribution files
 *.zip
+
+# Local script that reads bridge-server/.env and hits a running instance
+test-production.js
