@@ -4,6 +4,11 @@
  * Provides log access and system health monitoring for external MCP integration
  */
 
+/** HTTP query flags arrive as strings; 'false' must not read as true. */
+function isTrue(value) {
+  return value === true || value === 'true' || value === '1';
+}
+
 export class DiagnosticsAPI {
   constructor() {
     this.logBuffer = [];
@@ -78,9 +83,13 @@ export class DiagnosticsAPI {
       message: args.map(arg => 
         typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
       ).join(' '),
-      stack: stack || (level === 'error' ? new Error().stack : null),
       source: this.determineLogSource(args)
     };
+    // Absent rather than null: clients validate `stack` as an optional string
+    const entryStack = stack || (level === 'error' ? new Error().stack : null);
+    if (entryStack) {
+      entry.stack = entryStack;
+    }
 
     this.logBuffer.push(entry);
     
@@ -137,15 +146,18 @@ export class DiagnosticsAPI {
       logs = logs.slice(-parseInt(lines));
 
       // Remove stack traces unless requested
-      if (!includeStack) {
-        logs = logs.map(log => ({ ...log, stack: undefined }));
+      if (!isTrue(includeStack)) {
+        logs = logs.map(({ stack: _stack, ...log }) => log);
       }
 
       res.json({
-        logs,
-        total: logs.length,
-        bufferSize: this.logBuffer.length,
-        maxBufferSize: this.maxLogBuffer
+        success: true,
+        data: {
+          logs,
+          total: logs.length,
+          bufferSize: this.logBuffer.length,
+          maxBufferSize: this.maxLogBuffer
+        }
       });
     } catch (error) {
       console.error('DiagnosticsAPI | Error getting recent logs:', error);
@@ -164,8 +176,9 @@ export class DiagnosticsAPI {
         return res.status(400).json({ error: 'Pattern parameter is required' });
       }
 
-      const flags = caseSensitive ? 'g' : 'gi';
-      const regex = new RegExp(pattern, flags);
+      // No `g` flag: RegExp#test on a global regex resumes from lastIndex,
+      // which skipped every other matching entry.
+      const regex = new RegExp(pattern, isTrue(caseSensitive) ? '' : 'i');
       
       let logs = [...this.logBuffer];
 
@@ -188,10 +201,13 @@ export class DiagnosticsAPI {
       );
 
       res.json({
-        logs: matches,
-        matches: matches.length,
-        pattern,
-        searchTimeframe: timeframe || 'all'
+        success: true,
+        data: {
+          logs: matches,
+          matches: matches.length,
+          pattern,
+          searchTimeframe: timeframe ? String(timeframe) : 'all'
+        }
       });
     } catch (error) {
       console.error('DiagnosticsAPI | Error searching logs:', error);
@@ -215,14 +231,25 @@ export class DiagnosticsAPI {
       const errorCount = recentLogs.filter(log => log.level === 'error').length;
       const warningCount = recentLogs.filter(log => log.level === 'warn').length;
 
+      // The module runs in a browser, where `process` does not exist; uptime
+      // and memory are then omitted (clients treat them as optional, not null).
+      const hasProcess = typeof process !== 'undefined' && process?.uptime;
+      const server = {
+        foundryVersion: game?.version || 'unknown',
+        systemVersion: game?.system?.version || 'unknown',
+        worldId: game?.world?.id || 'unknown'
+      };
+      const perf = {
+        connectedClients: game?.socket?.socket?.sockets?.size || 0
+      };
+      if (hasProcess) {
+        server.uptime = process.uptime();
+        perf.memory = process.memoryUsage();
+      }
+
       const health = {
         timestamp: new Date().toISOString(),
-        server: {
-          foundryVersion: game?.version || 'unknown',
-          systemVersion: game?.system?.version || 'unknown',
-          worldId: game?.world?.id || 'unknown',
-          uptime: typeof process !== 'undefined' ? process.uptime() : null
-        },
+        server,
         users: {
           total: game?.users?.size || 0,
           active: game?.users?.filter(u => u.active)?.length || 0,
@@ -233,10 +260,7 @@ export class DiagnosticsAPI {
           active: Array.from(game?.modules?.values() || [])
             .filter(m => m.active).length
         },
-        performance: {
-          memory: typeof process !== 'undefined' ? process.memoryUsage() : null,
-          connectedClients: game?.socket?.socket?.sockets?.size || 0
-        },
+        performance: perf,
         logs: {
           bufferSize: this.logBuffer.length,
           recentErrors: errorCount,
@@ -246,7 +270,7 @@ export class DiagnosticsAPI {
         status: this.determineHealthStatus(errorCount, warningCount)
       };
 
-      res.json(health);
+      res.json({ success: true, data: health });
     } catch (error) {
       console.error('DiagnosticsAPI | Error getting system health:', error);
       res.status(500).json({ error: 'Failed to retrieve system health' });
@@ -318,7 +342,7 @@ export class DiagnosticsAPI {
         healthScore: this.calculateHealthScore(recentErrors.length, timeframe)
       };
 
-      res.json(diagnosis);
+      res.json({ success: true, data: diagnosis });
     } catch (error) {
       console.error('DiagnosticsAPI | Error diagnosing errors:', error);
       res.status(500).json({ error: 'Failed to diagnose errors' });

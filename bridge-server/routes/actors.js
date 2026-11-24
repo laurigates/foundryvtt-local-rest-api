@@ -23,6 +23,15 @@ export function createActorsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[ActorsRouter] Error searching actors:', error.message);
+      // The module rejects bad input (e.g. limit > 100) with error
+      // 'Validation Error'; the socket client puts that in error.code.
+      if (error.code === 'Validation Error') {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          message: error.message
+        });
+      }
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',

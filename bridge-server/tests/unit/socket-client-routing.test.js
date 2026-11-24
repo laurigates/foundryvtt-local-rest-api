@@ -57,3 +57,21 @@ describe('FoundrySocketClient response routing', () => {
     await expect(pending).rejects.toThrow('Valid API key required');
   });
 });
+
+describe('FoundrySocketClient.getMessageType', () => {
+  const client = new FoundrySocketClient({ apiKey: 'k' });
+
+  test.each([
+    ['/api/diagnostics/logs', 'diagnostics.logs'],
+    ['/api/diagnostics/search', 'diagnostics.search'],
+    ['/api/diagnostics/health', 'diagnostics.health'],
+    ['/api/diagnostics/errors', 'diagnostics.errors']
+  ])('maps GET %s to %s', (endpoint, type) => {
+    expect(client.getMessageType(endpoint, 'GET')).toBe(type);
+  });
+
+  test('does not read a diagnostics or compendium action as a route id', () => {
+    expect(client.extractRouteParams('/api/diagnostics/logs')).toEqual({});
+    expect(client.extractRouteParams('/api/actors/abc123')).toEqual({ id: 'abc123' });
+  });
+});

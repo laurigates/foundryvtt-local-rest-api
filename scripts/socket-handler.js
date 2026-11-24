@@ -159,8 +159,10 @@ export class SocketMessageHandler {
 
       this.logRequest(messageType, true, user);
 
-      // Route message to appropriate handler with validated data
-      const result = await this.routeMessage(messageType, validation.data, body, user);
+      // Route message to appropriate handler with validated data. For dice the
+      // validated (sanitised) body replaces the raw one.
+      const routedBody = messageType === 'dice.roll' ? validation.data : body;
+      const result = await this.routeMessage(messageType, validation.data, routedBody, user);
       return this.createSuccessResponse(requestId, result);
 
     } catch (error) {
@@ -214,7 +216,12 @@ export class SocketMessageHandler {
   }
 
   /**
-   * Validate input based on message type
+   * Validate input based on message type.
+   *
+   * The bridge sends `params: {query: <HTTP query>, params: <route params>}`
+   * (FoundrySocketClient.sendRequest); a direct caller may put the id at
+   * `params.id`. Search validators return flat fields, which are passed on as
+   * the request query so the route reads them from `req.query`.
    */
   async validateInput(type, params, body) {
     const [category, action] = type.split('.');
@@ -222,9 +229,9 @@ export class SocketMessageHandler {
     switch (category) {
       case 'actors':
         if (action === 'search') {
-          return this.validationSchemas.validateActorSearch(params.query || params);
+          return this.asQuery(this.validationSchemas.validateActorSearch(params.query || params));
         } else if (action === 'get') {
-          const idValidation = this.validationSchemas.validateId(params.id);
+          const idValidation = this.validationSchemas.validateId(params.params?.id ?? params.id);
           return {
             valid: idValidation.valid,
             errors: idValidation.valid ? [] : [idValidation.error],
@@ -249,6 +256,13 @@ export class SocketMessageHandler {
     }
     
     return { valid: true, errors: [], data: params };
+  }
+
+  /**
+   * Wrap a search validator's flat result as the request query.
+   */
+  asQuery(validation) {
+    return { ...validation, data: { query: validation.data, params: {} } };
   }
 
   /**
@@ -340,12 +354,18 @@ export class SocketMessageHandler {
     
     // Apply permission-based data sanitization
     if (category === 'actors' && responseData) {
-      if (Array.isArray(responseData)) {
-        // Filter collection by permissions
-        const filtered = this.permissionValidator.filterByPermission(user, responseData, 'read');
-        return filtered.map(actor => 
-          this.permissionValidator.sanitizeDocumentData(user, actor, actor)
-        );
+      if (Array.isArray(responseData.data)) {
+        // Search results are summaries; check each against its actor document.
+        // GMs see everything, as in PermissionValidator.filterByPermission.
+        if (!user?.isGM) {
+          const readable = responseData.data
+            .map(summary => ({ summary, actor: game.actors.get(summary.id) }))
+            .filter(({ actor }) => actor &&
+              this.permissionValidator.validateDocumentPermission(user, actor, 'read').success);
+          responseData.data = readable.map(({ summary, actor }) =>
+            this.permissionValidator.sanitizeDocumentData(user, actor, summary));
+          responseData.total = responseData.data.length;
+        }
       } else if (responseData.data) {
         // Sanitize single actor data
         const actor = game.actors.get(params.id);

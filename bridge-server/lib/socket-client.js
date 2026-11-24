@@ -417,6 +417,8 @@ export class FoundrySocketClient extends EventEmitter {
     if (path === '/dice/roll' && method === 'POST') return 'dice.roll';
     if (path === '/world' && method === 'GET') return 'world.info';
     if (path === '/status' && method === 'GET') return 'status';
+    const diagnostics = path.match(/^\/diagnostics\/(logs|search|health|errors)$/);
+    if (diagnostics && method === 'GET') return `diagnostics.${diagnostics[1]}`;
     
     // Default mapping
     const resource = path.split('/')[1] || 'unknown';
@@ -428,7 +430,9 @@ export class FoundrySocketClient extends EventEmitter {
    * Extract route parameters from endpoint
    */
   extractRouteParams(endpoint) {
-    const match = endpoint.match(/\/api\/\w+\/([\w-]+)$/);
+    // Only document routes take an id; /diagnostics/logs and
+    // /compendium/search end in an action, not an id.
+    const match = endpoint.match(/\/api\/(?:actors|items|scenes)\/([\w-]+)$/);
     if (match) {
       return { id: match[1] };
     }
