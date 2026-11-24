@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "3fa8d58df2e6ddfc3fd1ed1fc4070a813e55dfbe",
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "foundryvtt-local-rest-api",
+      "changelog-path": "CHANGELOG.md"
+    }
+  },
+  "pull-request-title-pattern": "chore: release ${version}",
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "chore", "section": "Miscellaneous", "hidden": false }
+  ],
+  "separate-pull-requests": false
+}
