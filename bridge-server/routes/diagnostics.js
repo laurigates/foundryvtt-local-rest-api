@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { sendModuleRefusal } from '../lib/module-errors.js';
 
 export function createDiagnosticsRouter(socketClient) {
   const router = Router();
@@ -23,6 +24,7 @@ export function createDiagnosticsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[DiagnosticsRouter] Error getting logs:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
@@ -46,6 +48,7 @@ export function createDiagnosticsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[DiagnosticsRouter] Error searching logs:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
@@ -68,6 +71,7 @@ export function createDiagnosticsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[DiagnosticsRouter] Error getting health info:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
@@ -91,6 +95,7 @@ export function createDiagnosticsRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[DiagnosticsRouter] Error diagnosing errors:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',

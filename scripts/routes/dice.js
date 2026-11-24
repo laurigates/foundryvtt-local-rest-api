@@ -39,34 +39,18 @@ export class DiceAPI {
         rollFormula = formula.replace(/(\d*)d20/g, '2d20kl1');
       }
 
-      // Create and evaluate the roll
+      // Create and evaluate the roll. Roll#evaluate is always async; the
+      // `async` option was removed and only logs a compatibility warning.
       const roll = new Roll(rollFormula);
-      await roll.evaluate({ async: true });
+      await roll.evaluate();
 
       // Format the result
       const result = this.formatRollResult(roll, formula, reason, { advantage, disadvantage });
 
-      // Optionally send to chat (if requested)
+      // Optionally send to chat (if requested). Roll#toMessage sets the author,
+      // the dice sound and `rolls`; CONST.CHAT_MESSAGE_TYPES no longer exists.
       if (req.body.sendToChat) {
-        const chatData = {
-          user: game.user.id,
-          content: `
-            <div class="dice-roll">
-              <div class="dice-result">
-                <h4 class="dice-formula">${formula}${reason ? ` - ${reason}` : ''}</h4>
-                <div class="dice-tooltip" style="display: none;">
-                  ${roll.dice.map(d => d.results.map(r => `<span class="die d${d.faces}">${r.result}</span>`).join('')).join('')}
-                </div>
-                <h4 class="dice-total">${roll.total}</h4>
-              </div>
-            </div>
-          `,
-          sound: CONFIG.sounds.dice,
-          type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-          roll: roll
-        };
-
-        ChatMessage.create(chatData);
+        await roll.toMessage({ flavor: reason ? `${formula} - ${reason}` : formula });
       }
 
       res.json({
@@ -121,7 +105,9 @@ export class DiceAPI {
       options: options
     };
 
-    // Process roll terms
+    // Process roll terms. The term classes live under foundry.dice.terms;
+    // the Die/NumericTerm/OperatorTerm globals are gone in v14.
+    const { Die, NumericTerm, OperatorTerm } = foundry.dice.terms;
     roll.terms.forEach(term => {
       if (term instanceof Die) {
         const dieData = {

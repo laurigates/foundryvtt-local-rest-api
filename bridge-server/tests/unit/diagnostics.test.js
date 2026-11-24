@@ -2,12 +2,14 @@ import { jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import { createDiagnosticsRouter } from '../../routes/diagnostics.js';
+import { listenLoopback, close } from '../helpers/loopback.js';
 
 describe('Diagnostics Router', () => {
   let app;
+  let server;
   let mockSocketClient;
   
-  beforeEach(() => {
+  beforeEach(async () => {
     app = express();
     app.use(express.json());
     
@@ -79,11 +81,14 @@ describe('Diagnostics Router', () => {
     
     // Mount the router
     app.use('/api/diagnostics', createDiagnosticsRouter(mockSocketClient));
+    server = await listenLoopback(app);
   });
+
+  afterEach(() => close(server));
   
   describe('GET /api/diagnostics/connection', () => {
     it('should return comprehensive connection diagnostics', async () => {
-      const response = await request(app)
+      const response = await request(server)
         .get('/api/diagnostics/connection')
         .expect(200);
       
@@ -130,7 +135,7 @@ describe('Diagnostics Router', () => {
       
       mockSocketClient.getTroubleshootingSuggestions.mockReturnValue([]);
       
-      const response = await request(app)
+      const response = await request(server)
         .get('/api/diagnostics/connection')
         .expect(200);
       
@@ -147,7 +152,7 @@ describe('Diagnostics Router', () => {
         throw new Error('Diagnostic error');
       });
       
-      const response = await request(app)
+      const response = await request(server)
         .get('/api/diagnostics/connection')
         .expect(500);
       

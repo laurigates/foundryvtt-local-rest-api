@@ -1,4 +1,4 @@
-<form class="foundryvtt-local-rest-api-config">
+<div class="foundryvtt-local-rest-api-config">
     <div class="form-header">
         <h2><i class="fas fa-key"></i> {{localize "foundryvtt-local-rest-api.config.title"}}</h2>
     </div>
@@ -21,11 +21,11 @@
                 <input type="text" id="api-key-display" value="{{apiKey}}" readonly class="api-key-field">
                 <div class="button-group">
                     {{#if hasApiKey}}
-                    <button type="button" id="copy-api-key" title="{{localize 'foundryvtt-local-rest-api.config.copy'}}">
+                    <button type="button" data-action="copyApiKey" title="{{localize 'foundryvtt-local-rest-api.config.copy'}}">
                         <i class="fas fa-copy"></i>
                     </button>
                     {{/if}}
-                    <button type="button" id="regenerate-api-key" class="danger" title="{{localize 'foundryvtt-local-rest-api.config.regenerate'}}">
+                    <button type="button" data-action="regenerateApiKey" class="danger" title="{{localize 'foundryvtt-local-rest-api.config.regenerate'}}">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
@@ -44,7 +44,7 @@
     <div class="form-group">
         <label>{{localize "foundryvtt-local-rest-api.config.connection-test"}}</label>
         <div class="form-fields">
-            <button type="button" id="test-connection">
+            <button type="button" data-action="testConnection">
                 <i class="fas fa-plug"></i> {{localize "foundryvtt-local-rest-api.config.test"}}
             </button>
             <p class="notes">{{localize "foundryvtt-local-rest-api.config.test-hint"}}</p>
@@ -63,4 +63,4 @@
         </div>
     </div>
     {{/if}}
-</form>
+</div>

@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { sendModuleRefusal } from '../lib/module-errors.js';
 
 export function createScenesRouter(socketClient) {
   const router = Router();
@@ -22,6 +23,7 @@ export function createScenesRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[ScenesRouter] Error getting current scene:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
@@ -45,6 +47,7 @@ export function createScenesRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error(`[ScenesRouter] Error getting scene ${req.params.id}:`, error.message);
+      if (sendModuleRefusal(res, error)) return;
       
       // Handle specific errors from FoundryVTT
       if (error.message.includes('Scene not found') || error.message.includes('404')) {
@@ -78,6 +81,7 @@ export function createScenesRouter(socketClient) {
       res.json(result);
     } catch (error) {
       console.error('[ScenesRouter] Error searching scenes:', error.message);
+      if (sendModuleRefusal(res, error)) return;
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
