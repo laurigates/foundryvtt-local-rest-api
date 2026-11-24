@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/laurigates/foundryvtt-local-rest-api/compare/v2.1.0...v2.1.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **manifest:** declare Foundry 14.369 as verified ([#21](https://github.com/laurigates/foundryvtt-local-rest-api/issues/21)) ([03dc580](https://github.com/laurigates/foundryvtt-local-rest-api/commit/03dc5805e82c22d612fe4ff621d9d42de47d11c7))
+
 ## [2.1.0](https://github.com/laurigates/foundryvtt-local-rest-api/compare/v2.0.0...v2.1.0) (2026-11-24)
 
 
