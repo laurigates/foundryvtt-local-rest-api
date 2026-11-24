@@ -1,33 +1,35 @@
-FROM node:18-alpine
+# Node 24 is Active LTS (EOL 2028-04-30); CI tests 22.x and 24.x.
+FROM node:24-alpine AS deps
 
-# Set working directory
 WORKDIR /app
 
-# Create app user and group
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
-
-# Copy package files and install dependencies
+# Production dependencies only; the cache mount keeps rebuilds fast
 COPY package*.json ./
-RUN npm ci --omit=dev && \
-    npm cache clean --force
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 
-# Copy application files
-COPY . .
+FROM node:24-alpine
 
-# Create data directory for configuration
-RUN mkdir -p /app/data && \
-    chown -R nextjs:nodejs /app/data
+LABEL org.opencontainers.image.source="https://github.com/laurigates/foundryvtt-local-rest-api" \
+      org.opencontainers.image.description="Local REST API bridge server for FoundryVTT" \
+      org.opencontainers.image.licenses="MIT"
 
-# Switch to non-root user
-USER nextjs
+ENV NODE_ENV=production
 
-# Expose port
+WORKDIR /app
+
+# Application files and dependencies, owned by the unprivileged `node` user
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+COPY --chown=node:node . .
+
+# Data directory for configuration
+RUN mkdir -p /app/data && chown node:node /app/data
+
+USER node
+
 EXPOSE 3030
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3030/api/status', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the server
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

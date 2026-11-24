@@ -24,7 +24,7 @@ Installing the module and bridge server, the API, integrations and troubleshooti
 
 ### Prerequisites
 - FoundryVTT v13 or v14 running on your system, with a Gamemaster logged in through a browser (that client answers the bridge's requests)
-- Node.js 16+ installed for the bridge server
+- Node.js 22.12+ installed for the bridge server
 
 ### Step 1: Install FoundryVTT Module
 1. In FoundryVTT, go to **Setup** → **Add-on Modules** → **Install Module**
