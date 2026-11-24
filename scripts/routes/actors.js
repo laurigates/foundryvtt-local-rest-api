@@ -205,7 +205,9 @@ export class ActorsAPI {
     for (const [key, skill] of Object.entries(skills)) {
       if (skill && typeof skill === 'object') {
         formatted[key] = {
+          // dnd5e: `value` is the proficiency multiplier, `total` the prepared modifier
           value: skill.value || 0,
+          total: skill.total ?? null,
           proficient: skill.proficient || false,
           bonus: skill.bonus || 0,
           passive: skill.passive || 10

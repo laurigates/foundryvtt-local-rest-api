@@ -25,6 +25,8 @@ export class ItemsAPI {
         actor.items.forEach(item => {
           items.push({
             ...item,
+            // Document#id is a prototype getter, which a spread drops
+            id: item.id,
             _ownerId: actor.id,
             _ownerName: actor.name
           });

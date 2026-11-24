@@ -85,6 +85,12 @@ describe('ActorsAPI with dnd5e 6.x data', () => {
     expect(effect).toMatchObject({ name: 'Poisoned', icon: 'icons/poison.svg' });
   });
 
+  test('reports the prepared skill total beside the proficiency multiplier (#6)', () => {
+    const skills = api.formatSkills({ prc: { value: 1, total: 5, bonus: 0, passive: 15 }, ste: { value: 0 } });
+    expect(skills.prc).toMatchObject({ value: 1, total: 5, passive: 15 });
+    expect(skills.ste.total).toBeNull();
+  });
+
   test('hasSpellProperty still reads pre-3.0 component booleans', () => {
     expect(hasSpellProperty({ components: { vocal: true } }, 'vocal')).toBe(true);
     expect(hasSpellProperty({ properties: ['material'] }, 'material')).toBe(true);
@@ -102,6 +108,25 @@ describe('ItemsAPI with v14 effects and dnd5e 6.x items', () => {
     });
     expect(summary.weight).toBe(10);
     expect(summary.source).toBe('PHB');
+  });
+
+  test('search keeps the id of actor-owned items, whose id is a getter (#6)', () => {
+    // Document#id is a prototype getter over _id; an object spread drops it.
+    class FakeItem {
+      constructor(data) { Object.assign(this, data); }
+      get id() { return this._id; }
+    }
+    const owned = new FakeItem({ _id: 'owned00000000001', name: 'Dagger', type: 'weapon', system: {} });
+    global.game = {
+      items: new Map(),
+      actors: new Map([['a1', { id: 'a1', name: 'Kobold', items: new Map([[owned.id, owned]]) }]])
+    };
+    let body;
+    const res = { json: (data) => { body = data; return res; }, status: () => res };
+
+    api.searchItems({ query: {} }, res);
+
+    expect(body.data[0]).toMatchObject({ id: 'owned00000000001', name: 'Dagger', owner: { id: 'a1', name: 'Kobold' } });
   });
 
   test('reads effect changes from system.changes and the icon from img', () => {
