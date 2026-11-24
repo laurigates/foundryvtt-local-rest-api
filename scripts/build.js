@@ -80,7 +80,8 @@ function getReplacements() {
     GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY || fullRepoPath,
     MODULE_VERSION: process.env.MODULE_VERSION || packageVersion,
     AUTHOR_NAME: process.env.AUTHOR_NAME || packageAuthor.name || 'Your Name',
-    AUTHOR_EMAIL: process.env.AUTHOR_EMAIL || packageAuthor.email || 'your.email@example.com'
+    // No placeholder fallback: an empty email is dropped from module.json
+    AUTHOR_EMAIL: process.env.AUTHOR_EMAIL || packageAuthor.email || ''
   };
 }
 
@@ -105,7 +106,21 @@ function processTemplateToString() {
     console.log(`  ${key}: ${value}`);
   });
   
-  return template;
+  return dropEmptyAuthorEmails(template);
+}
+
+/**
+ * Remove `email` from authors that have none, rather than publishing an
+ * empty string (Foundry's manifest schema treats email as optional).
+ */
+function dropEmptyAuthorEmails(json) {
+  const manifest = JSON.parse(json);
+  if (Array.isArray(manifest.authors)) {
+    manifest.authors = manifest.authors.map(({ email, ...author }) =>
+      email ? { ...author, email } : author
+    );
+  }
+  return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
 function processTemplate() {
