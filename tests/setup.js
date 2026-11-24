@@ -95,6 +95,17 @@ global.ui = {
   }
 };
 
+// v14 dice term classes (DiceAPI.formatRollResult reads foundry.dice.terms)
+global.foundry = {
+  dice: {
+    terms: {
+      Die: class Die {},
+      NumericTerm: class NumericTerm {},
+      OperatorTerm: class OperatorTerm {}
+    }
+  }
+};
+
 // Mock Roll class
 global.Roll = class Roll {
   constructor(formula, data = {}) {
