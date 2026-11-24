@@ -48,7 +48,7 @@ export function createScenesRouter(socketClient) {
     } catch (error) {
       console.error(`[ScenesRouter] Error getting scene ${req.params.id}:`, error.message);
       if (sendModuleRefusal(res, error)) return;
-      
+
       // Handle specific errors from FoundryVTT
       if (error.message.includes('Scene not found') || error.message.includes('404')) {
         res.status(404).json({

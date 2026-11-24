@@ -14,7 +14,11 @@ import { FoundrySocketClient } from '../../lib/socket-client.js';
 const NAMESPACE = 'module.foundryvtt-local-rest-api';
 
 function connectedClient() {
-  const client = new FoundrySocketClient({ foundryUrl: 'http://fvtt:30000', apiKey: 'k', requestTimeout: 500 });
+  const client = new FoundrySocketClient({
+    foundryUrl: 'http://fvtt:30000',
+    apiKey: 'k',
+    requestTimeout: 500
+  });
   const socket = new EventEmitter();
   socket.connected = true;
   socket.disconnect = jest.fn();
@@ -34,11 +38,17 @@ describe('FoundrySocketClient response routing', () => {
   test('resolves a request from an isResponse message on the module event', async () => {
     const { client, socket } = connectedClient();
     const sent = [];
-    socket.on(NAMESPACE, (data) => { if (!data.isResponse) sent.push(data); });
+    socket.on(NAMESPACE, (data) => {
+      if (!data.isResponse) sent.push(data);
+    });
 
     const pending = client.sendRequest('/api/world', { method: 'GET' });
     expect(sent).toHaveLength(1);
-    socket.emit(NAMESPACE, { requestId: sent[0].requestId, success: true, data: { id: 'world' }, isResponse: true }, 'GmUser');
+    socket.emit(
+      NAMESPACE,
+      { requestId: sent[0].requestId, success: true, data: { id: 'world' }, isResponse: true },
+      'GmUser'
+    );
 
     await expect(pending).resolves.toEqual({ id: 'world' });
     expect(client.pendingRequests.size).toBe(0);
@@ -53,7 +63,13 @@ describe('FoundrySocketClient response routing', () => {
     socket.emit(NAMESPACE, { type: 'world.info', requestId });
     expect(client.pendingRequests.has(requestId)).toBe(true);
 
-    socket.emit(NAMESPACE, { requestId, success: false, error: 'Unauthorized', message: 'Valid API key required', isResponse: true });
+    socket.emit(NAMESPACE, {
+      requestId,
+      success: false,
+      error: 'Unauthorized',
+      message: 'Valid API key required',
+      isResponse: true
+    });
     await expect(pending).rejects.toThrow('Valid API key required');
   });
 });

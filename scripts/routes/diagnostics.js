@@ -39,11 +39,11 @@ export class DiagnosticsAPI {
     };
 
     // Intercept console output
-    ['log', 'warn', 'error', 'info'].forEach(level => {
+    ['log', 'warn', 'error', 'info'].forEach((level) => {
       console[level] = (...args) => {
         // Call original console method
         originalConsole[level](...args);
-        
+
         // Capture for our buffer
         this.captureLogEntry(level, args);
       };
@@ -80,9 +80,9 @@ export class DiagnosticsAPI {
     const entry = {
       timestamp: new Date().toISOString(),
       level,
-      message: args.map(arg => 
-        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-      ).join(' '),
+      message: args
+        .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg)))
+        .join(' '),
       source: this.determineLogSource(args)
     };
     // Absent rather than null: clients validate `stack` as an optional string
@@ -92,7 +92,7 @@ export class DiagnosticsAPI {
     }
 
     this.logBuffer.push(entry);
-    
+
     // Maintain buffer size
     if (this.logBuffer.length > this.maxLogBuffer) {
       this.logBuffer.shift();
@@ -116,30 +116,24 @@ export class DiagnosticsAPI {
    */
   getRecentLogs(req, res) {
     try {
-      const { 
-        lines = 50, 
-        level, 
-        since, 
-        source,
-        includeStack = false 
-      } = req.query;
+      const { lines = 50, level, since, source, includeStack = false } = req.query;
 
       let logs = [...this.logBuffer];
 
       // Filter by level
       if (level) {
-        logs = logs.filter(log => log.level === level);
+        logs = logs.filter((log) => log.level === level);
       }
 
       // Filter by timestamp
       if (since) {
         const sinceDate = new Date(since);
-        logs = logs.filter(log => new Date(log.timestamp) > sinceDate);
+        logs = logs.filter((log) => new Date(log.timestamp) > sinceDate);
       }
 
       // Filter by source
       if (source) {
-        logs = logs.filter(log => log.source === source);
+        logs = logs.filter((log) => log.source === source);
       }
 
       // Limit number of entries
@@ -179,25 +173,24 @@ export class DiagnosticsAPI {
       // No `g` flag: RegExp#test on a global regex resumes from lastIndex,
       // which skipped every other matching entry.
       const regex = new RegExp(pattern, isTrue(caseSensitive) ? '' : 'i');
-      
+
       let logs = [...this.logBuffer];
 
       // Filter by timeframe
       if (timeframe) {
         const timeframeMs = parseInt(timeframe) * 1000;
         const since = new Date(Date.now() - timeframeMs);
-        logs = logs.filter(log => new Date(log.timestamp) > since);
+        logs = logs.filter((log) => new Date(log.timestamp) > since);
       }
 
       // Filter by level
       if (level) {
-        logs = logs.filter(log => log.level === level);
+        logs = logs.filter((log) => log.level === level);
       }
 
       // Search pattern
-      const matches = logs.filter(log => 
-        regex.test(log.message) || 
-        (log.stack && regex.test(log.stack))
+      const matches = logs.filter(
+        (log) => regex.test(log.message) || (log.stack && regex.test(log.stack))
       );
 
       res.json({
@@ -221,15 +214,15 @@ export class DiagnosticsAPI {
   getSystemHealth(req, res) {
     try {
       const now = Date.now();
-      const oneHourAgo = now - (60 * 60 * 1000);
-      
+      const oneHourAgo = now - 60 * 60 * 1000;
+
       // Get recent error counts
-      const recentLogs = this.logBuffer.filter(log => 
-        new Date(log.timestamp).getTime() > oneHourAgo
+      const recentLogs = this.logBuffer.filter(
+        (log) => new Date(log.timestamp).getTime() > oneHourAgo
       );
-      
-      const errorCount = recentLogs.filter(log => log.level === 'error').length;
-      const warningCount = recentLogs.filter(log => log.level === 'warn').length;
+
+      const errorCount = recentLogs.filter((log) => log.level === 'error').length;
+      const warningCount = recentLogs.filter((log) => log.level === 'warn').length;
 
       // The module runs in a browser, where `process` does not exist; uptime
       // and memory are then omitted (clients treat them as optional, not null).
@@ -252,13 +245,12 @@ export class DiagnosticsAPI {
         server,
         users: {
           total: game?.users?.size || 0,
-          active: game?.users?.filter(u => u.active)?.length || 0,
-          gm: game?.users?.filter(u => u.isGM)?.length || 0
+          active: game?.users?.filter((u) => u.active)?.length || 0,
+          gm: game?.users?.filter((u) => u.isGM)?.length || 0
         },
         modules: {
           total: game?.modules?.size || 0,
-          active: Array.from(game?.modules?.values() || [])
-            .filter(m => m.active).length
+          active: Array.from(game?.modules?.values() || []).filter((m) => m.active).length
         },
         performance: perf,
         logs: {
@@ -286,15 +278,15 @@ export class DiagnosticsAPI {
       const timeframeMs = parseInt(timeframe) * 1000;
       const since = new Date(Date.now() - timeframeMs);
 
-      const recentErrors = this.logBuffer.filter(log => 
-        log.level === 'error' && new Date(log.timestamp) > since
+      const recentErrors = this.logBuffer.filter(
+        (log) => log.level === 'error' && new Date(log.timestamp) > since
       );
 
       // Categorize errors
       const errorCategories = {};
       const suggestions = [];
 
-      recentErrors.forEach(error => {
+      recentErrors.forEach((error) => {
         for (const pattern of this.errorPatterns) {
           if (pattern.test(error.message)) {
             const category = pattern.source.replace(/[/\\^$*+?.()|[\]{}]/g, '');
@@ -334,7 +326,7 @@ export class DiagnosticsAPI {
         timeframe: `${timeframe} seconds`,
         summary: {
           totalErrors: recentErrors.length,
-          uniqueErrors: new Set(recentErrors.map(e => e.message)).size,
+          uniqueErrors: new Set(recentErrors.map((e) => e.message)).size,
           categories: errorCategories
         },
         recentErrors: recentErrors.slice(-10), // Last 10 errors

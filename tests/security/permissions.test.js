@@ -51,9 +51,7 @@ describe('Permission Security', () => {
         ['user123', mockUser],
         ['gm123', { id: 'gm123', name: 'GM User', role: 4, isGM: true }]
       ]),
-      actors: new Map([
-        ['actor123', mockActor]
-      ]),
+      actors: new Map([['actor123', mockActor]]),
       scenes: {
         active: {
           id: 'scene123',
@@ -78,7 +76,7 @@ describe('Permission Security', () => {
     // Mock console methods
     global.console.error = jest.fn();
     global.console.log = jest.fn();
-    
+
     // Initialize socket handler
     socketHandler = new SocketMessageHandler();
     socketHandler.setApiKey('test-api-key');
@@ -98,7 +96,7 @@ describe('Permission Security', () => {
 
       // Test that access is denied
       const response = await socketHandler.handleMessage(request);
-      
+
       expect(response.success).toBe(false);
       expect(response.error).toContain('Forbidden');
       expect(response.message).toContain('permission');
@@ -115,7 +113,7 @@ describe('Permission Security', () => {
       mockActor.ownership.user123 = 2; // Observer
 
       const response = await socketHandler.handleMessage(request);
-      
+
       expect(response.success).toBe(true);
       expect(response.data).toBeDefined();
     });
@@ -131,7 +129,8 @@ describe('Permission Security', () => {
         body: { name: 'Updated Name' }
       };
 
-      for (const level of [2, 3]) { // Observer, Owner
+      for (const level of [2, 3]) {
+        // Observer, Owner
         mockActor.ownership.user123 = level;
         const response = await socketHandler.handleMessage(request);
 
@@ -154,7 +153,7 @@ describe('Permission Security', () => {
       mockActor.ownership.gm123 = 0; // Even with no explicit permission
 
       const response = await socketHandler.handleMessage(request);
-      
+
       expect(response.success).toBe(true);
       expect(response.data).toBeDefined();
     });
@@ -170,7 +169,7 @@ describe('Permission Security', () => {
       };
 
       const response = await socketHandler.handleMessage(request);
-      
+
       // The route's {success, data} payload sits inside the socket envelope
       expect(response.success).toBe(true);
       expect(response.data.data.total).toEqual(expect.any(Number));
@@ -178,7 +177,7 @@ describe('Permission Security', () => {
 
     test('should prevent dice rolls from users with None role', async () => {
       mockUser.role = 0; // None
-      
+
       const request = {
         type: 'dice.roll',
         requestId: 'req123',
@@ -187,7 +186,7 @@ describe('Permission Security', () => {
       };
 
       const response = await socketHandler.handleMessage(request);
-      
+
       expect(response.success).toBe(false);
       expect(response.error).toContain('Forbidden');
     });
@@ -247,25 +246,29 @@ describe('Permission Security', () => {
       // Role gating only: stub the routes so the allowed case needs no
       // diagnostics fixtures.
       for (const method of Object.values(stubs)) {
-        jest.spyOn(socketHandler.handlers.diagnostics, method)
+        jest
+          .spyOn(socketHandler.handlers.diagnostics, method)
           .mockImplementation((req, res) => res.json({ success: true, data: { stub: method } }));
       }
     });
 
-    test.each(Object.entries(required))('%s refuses a user one role below the gate', async (type, role) => {
-      mockUser.role = role - 1;
+    test.each(Object.entries(required))(
+      '%s refuses a user one role below the gate',
+      async (type, role) => {
+        mockUser.role = role - 1;
 
-      const response = await socketHandler.handleMessage({
-        type,
-        requestId: 'req123',
-        auth: { apiKey: 'test-api-key' },
-        params: { query: { pattern: '.' }, params: {} }
-      });
+        const response = await socketHandler.handleMessage({
+          type,
+          requestId: 'req123',
+          auth: { apiKey: 'test-api-key' },
+          params: { query: { pattern: '.' }, params: {} }
+        });
 
-      expect(response.success).toBe(false);
-      expect(response.error).toBe('Forbidden');
-      expect(socketHandler.handlers.diagnostics[stubs[type]]).not.toHaveBeenCalled();
-    });
+        expect(response.success).toBe(false);
+        expect(response.error).toBe('Forbidden');
+        expect(socketHandler.handlers.diagnostics[stubs[type]]).not.toHaveBeenCalled();
+      }
+    );
 
     test.each(Object.entries(required))('%s answers a user at the gate', async (type, role) => {
       mockUser.role = role;
@@ -290,17 +293,17 @@ describe('Permission Security', () => {
         requestId: 'req123',
         auth: { apiKey: 'test-api-key' },
         params: { id: 'actor123' },
-        body: { 
-          ownership: { 
+        body: {
+          ownership: {
             user123: 3 // Try to give self owner permission
-          } 
+          }
         }
       };
 
       mockActor.ownership.user123 = 1; // Limited permission
 
       const response = await socketHandler.handleMessage(request);
-      
+
       expect(response.success).toBe(false);
       expect(response.message).toContain('Unknown actors action: update');
       expect(mockActor.ownership.user123).toBe(1); // Unchanged
@@ -312,7 +315,7 @@ describe('Permission Security', () => {
         type: 'actors.get',
         requestId: 'req123',
         auth: { apiKey: 'test-api-key' },
-        params: { 
+        params: {
           id: 'actor123',
           // Try to inject permission override
           __proto__: { canUserModify: true }
@@ -322,7 +325,7 @@ describe('Permission Security', () => {
       mockActor.ownership.user123 = 0; // None
 
       const response = await socketHandler.handleMessage(request);
-      
+
       expect(response.success).toBe(false);
       expect(response.error).toContain('Forbidden');
     });
@@ -340,7 +343,8 @@ describe('Permission Security', () => {
 
       // This test is about role gating, not world formatting, so stub the
       // route rather than mocking every collection formatWorldInfo reads.
-      jest.spyOn(socketHandler.handlers.world, 'getWorldInfo')
+      jest
+        .spyOn(socketHandler.handlers.world, 'getWorldInfo')
         .mockImplementation((req, res) => res.json({ success: true, data: { id: 'test-world' } }));
 
       // Test each role level

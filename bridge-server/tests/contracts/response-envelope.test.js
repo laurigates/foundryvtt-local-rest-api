@@ -91,27 +91,30 @@ describe('HTTP response envelope (ADR-0003)', () => {
   });
   afterEach(() => consoleError.mockRestore());
 
-  describe.each(ROUTES.map(r => [`${r[2].toUpperCase()} ${r[0]}${r[3]}`, ...r]))('%s', (_name, mount, factory, method, path) => {
-    test('passes a module success payload through as {success, data}', async () => {
-      const payload = { success: true, data: { marker: 'from-module' }, total: 1 };
-      const res = await call(factory, mount, method, path, async () => payload);
+  describe.each(ROUTES.map((r) => [`${r[2].toUpperCase()} ${r[0]}${r[3]}`, ...r]))(
+    '%s',
+    (_name, mount, factory, method, path) => {
+      test('passes a module success payload through as {success, data}', async () => {
+        const payload = { success: true, data: { marker: 'from-module' }, total: 1 };
+        const res = await call(factory, mount, method, path, async () => payload);
 
-      expect(res.status).toBe(200);
-      expect(validateSuccess(res.body)).toBe(true);
-      expect(res.body).toEqual(payload);
-    });
-
-    test.each([
-      ['an unreachable module', rejection('socket closed'), 500],
-      ['a rejected API key', rejection('bad key', 'Unauthorized'), 401],
-      ['a role or permission refusal', rejection('no access', 'Forbidden'), 403]
-    ])('answers %s with the failure envelope', async (_label, error, status) => {
-      const res = await call(factory, mount, method, path, async () => {
-        throw error;
+        expect(res.status).toBe(200);
+        expect(validateSuccess(res.body)).toBe(true);
+        expect(res.body).toEqual(payload);
       });
 
-      expect(res.status).toBe(status);
-      expect(validateFailure(res.body)).toBe(true);
-    });
-  });
+      test.each([
+        ['an unreachable module', rejection('socket closed'), 500],
+        ['a rejected API key', rejection('bad key', 'Unauthorized'), 401],
+        ['a role or permission refusal', rejection('no access', 'Forbidden'), 403]
+      ])('answers %s with the failure envelope', async (_label, error, status) => {
+        const res = await call(factory, mount, method, path, async () => {
+          throw error;
+        });
+
+        expect(res.status).toBe(status);
+        expect(validateFailure(res.body)).toBe(true);
+      });
+    }
+  );
 });

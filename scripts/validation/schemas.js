@@ -18,7 +18,17 @@ export class ValidationSchemas {
     // Valid entity types
     this.VALID_TYPES = {
       actors: ['character', 'npc', 'vehicle', 'group'],
-      items: ['weapon', 'equipment', 'consumable', 'tool', 'loot', 'feature', 'spell', 'class', 'backpack'],
+      items: [
+        'weapon',
+        'equipment',
+        'consumable',
+        'tool',
+        'loot',
+        'feature',
+        'spell',
+        'class',
+        'backpack'
+      ],
       scenes: ['scene'],
       dice: ['roll', 'damage', 'check', 'save']
     };
@@ -58,7 +68,11 @@ export class ValidationSchemas {
 
     // Validate query
     if (params.query !== undefined) {
-      const queryValidation = this.validateString(params.query, 'query', this.LIMITS.MAX_QUERY_LENGTH);
+      const queryValidation = this.validateString(
+        params.query,
+        'query',
+        this.LIMITS.MAX_QUERY_LENGTH
+      );
       if (!queryValidation.valid) {
         errors.push(queryValidation.error);
       } else {
@@ -78,7 +92,12 @@ export class ValidationSchemas {
 
     // Validate limit
     if (params.limit !== undefined) {
-      const limitValidation = this.validateNumber(params.limit, 'limit', 1, this.LIMITS.MAX_RESULTS);
+      const limitValidation = this.validateNumber(
+        params.limit,
+        'limit',
+        1,
+        this.LIMITS.MAX_RESULTS
+      );
       if (!limitValidation.valid) {
         errors.push(limitValidation.error);
       } else {
@@ -112,7 +131,11 @@ export class ValidationSchemas {
     for (const [field, maxLength] of Object.entries(strings)) {
       if (params[field] === undefined) continue;
       // Lenient sanitising applies to the search text only
-      const validation = this.validateString(params[field], field === 'query' ? 'query' : field, maxLength);
+      const validation = this.validateString(
+        params[field],
+        field === 'query' ? 'query' : field,
+        maxLength
+      );
       if (!validation.valid) {
         errors.push(validation.error);
       } else if (validation.value !== '') {
@@ -182,7 +205,11 @@ export class ValidationSchemas {
 
     // Validate reason (optional)
     if (body.reason !== undefined) {
-      const reasonValidation = this.validateString(body.reason, 'reason', this.LIMITS.MAX_REASON_LENGTH);
+      const reasonValidation = this.validateString(
+        body.reason,
+        'reason',
+        this.LIMITS.MAX_REASON_LENGTH
+      );
       if (!reasonValidation.valid) {
         errors.push(reasonValidation.error);
       } else {
@@ -219,7 +246,10 @@ export class ValidationSchemas {
     }
 
     if (formula.length > this.LIMITS.MAX_DICE_FORMULA_LENGTH) {
-      return { valid: false, error: `Formula too long (max ${this.LIMITS.MAX_DICE_FORMULA_LENGTH} characters)` };
+      return {
+        valid: false,
+        error: `Formula too long (max ${this.LIMITS.MAX_DICE_FORMULA_LENGTH} characters)`
+      };
     }
 
     // Check for dangerous patterns
@@ -238,7 +268,10 @@ export class ValidationSchemas {
     // Must contain at least one dice notation
     const hasDice = /\d*d\d+/i.test(formula);
     if (!hasDice && !/^\d+$/.test(formula)) {
-      return { valid: false, error: 'Formula must contain dice notation (e.g., 1d20) or be a number' };
+      return {
+        valid: false,
+        error: 'Formula must contain dice notation (e.g., 1d20) or be a number'
+      };
     }
 
     return { valid: true, value: formula.trim() };
@@ -257,7 +290,10 @@ export class ValidationSchemas {
     }
 
     if (id.length > this.LIMITS.MAX_ID_LENGTH) {
-      return { valid: false, error: `${fieldName} too long (max ${this.LIMITS.MAX_ID_LENGTH} characters)` };
+      return {
+        valid: false,
+        error: `${fieldName} too long (max ${this.LIMITS.MAX_ID_LENGTH} characters)`
+      };
     }
 
     // Check for path traversal attempts
@@ -266,7 +302,10 @@ export class ValidationSchemas {
     }
 
     // Check for injection attempts
-    if (this.matchesPattern(this.DANGEROUS_PATTERNS.sql, id) || this.matchesPattern(this.DANGEROUS_PATTERNS.command, id)) {
+    if (
+      this.matchesPattern(this.DANGEROUS_PATTERNS.sql, id) ||
+      this.matchesPattern(this.DANGEROUS_PATTERNS.command, id)
+    ) {
       return { valid: false, error: `Invalid ${fieldName}: contains forbidden characters` };
     }
 
@@ -367,11 +406,11 @@ export class ValidationSchemas {
     }
 
     const sanitized = value.toLowerCase().trim();
-    
+
     if (!validValues.includes(sanitized)) {
-      return { 
-        valid: false, 
-        error: `Invalid ${fieldName}. Must be one of: ${validValues.join(', ')}` 
+      return {
+        valid: false,
+        error: `Invalid ${fieldName}. Must be one of: ${validValues.join(', ')}`
       };
     }
 
@@ -417,7 +456,7 @@ export class ValidationSchemas {
     let sanitized = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
     sanitized = sanitized.replace(/on\w+\s*=/gi, '');
     sanitized = sanitized.replace(/javascript:/gi, '');
-    
+
     // Escape remaining HTML entities
     sanitized = sanitized
       .replace(/&/g, '&amp;')
@@ -438,7 +477,7 @@ export class ValidationSchemas {
 
     for (const [field, rules] of Object.entries(schema)) {
       const value = obj[field];
-      
+
       // Check required fields
       if (rules.required && (value === undefined || value === null)) {
         errors.push(`${field} is required`);
@@ -492,7 +531,7 @@ export class ValidationSchemas {
    */
   checkPrototypePollution(obj) {
     const dangerous = ['__proto__', 'constructor', 'prototype'];
-    
+
     const check = (item, path = '') => {
       if (typeof item !== 'object' || item === null) {
         return false;
@@ -509,7 +548,7 @@ export class ValidationSchemas {
           }
         }
       }
-      
+
       return false;
     };
 
@@ -532,7 +571,7 @@ export class ValidationSchemas {
 
       // Merge params and body for validation
       const input = { ...params, ...body };
-      
+
       return this.validateObject(input, schema);
     };
   }

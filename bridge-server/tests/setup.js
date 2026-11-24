@@ -29,7 +29,7 @@ global.testUtils = {
   generateApiKey: () => {
     return 'test-api-key-' + Math.random().toString(36).substring(7);
   },
-  
+
   mockSocketResponse: (requestId, data, success = true) => {
     return {
       requestId,
@@ -37,8 +37,8 @@ global.testUtils = {
       ...(success ? { data } : { error: 'Error', message: data })
     };
   },
-  
-  wait: (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 };
 
 // Note: afterAll hook will be in individual test files

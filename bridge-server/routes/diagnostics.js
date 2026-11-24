@@ -107,7 +107,7 @@ export function createDiagnosticsRouter(socketClient) {
   /**
    * Get detailed connection diagnostics
    * GET /api/diagnostics/connection
-   * 
+   *
    * Returns comprehensive diagnostics about the Socket.io connection to FoundryVTT,
    * including error history, troubleshooting suggestions, and connection statistics
    */
@@ -115,7 +115,7 @@ export function createDiagnosticsRouter(socketClient) {
     try {
       const diagnostics = socketClient.getConnectionDiagnostics();
       const suggestions = socketClient.getTroubleshootingSuggestions();
-      
+
       res.json({
         success: true,
         timestamp: new Date().toISOString(),
@@ -123,7 +123,8 @@ export function createDiagnosticsRouter(socketClient) {
         troubleshooting: {
           suggestions,
           hasErrors: diagnostics.errorHistory.length > 0,
-          requiresAction: !diagnostics.status.connected && diagnostics.statistics.connectionAttempts > 0
+          requiresAction:
+            !diagnostics.status.connected && diagnostics.statistics.connectionAttempts > 0
         },
         quickCheck: {
           foundryReachable: diagnostics.status.connected,
@@ -134,7 +135,7 @@ export function createDiagnosticsRouter(socketClient) {
       });
     } catch (error) {
       console.error('[DiagnosticsRouter] Error getting connection diagnostics:', error.message);
-      
+
       // Even if there's an error, try to return useful information
       res.status(500).json({
         success: false,

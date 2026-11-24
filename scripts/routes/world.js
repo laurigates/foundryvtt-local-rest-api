@@ -3,7 +3,6 @@
  */
 
 export class WorldAPI {
-
   /**
    * Get world information and statistics
    * GET /api/world
@@ -16,7 +15,6 @@ export class WorldAPI {
         success: true,
         data: worldData
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error getting world info:', error);
       res.status(500).json({
@@ -88,8 +86,8 @@ export class WorldAPI {
         },
         users: {
           total: game.users.size,
-          online: game.users.filter(u => u.active).length,
-          gm: game.users.filter(u => u.isGM).length
+          online: game.users.filter((u) => u.active).length,
+          gm: game.users.filter((u) => u.isGM).length
         }
       },
 
@@ -121,13 +119,13 @@ export class WorldAPI {
 
       // Folder structure
       folders: {
-        actors: this.getFolderStructure(game.folders.filter(f => f.type === 'Actor')),
-        items: this.getFolderStructure(game.folders.filter(f => f.type === 'Item')),
-        scenes: this.getFolderStructure(game.folders.filter(f => f.type === 'Scene')),
-        journals: this.getFolderStructure(game.folders.filter(f => f.type === 'JournalEntry')),
-        tables: this.getFolderStructure(game.folders.filter(f => f.type === 'RollTable')),
-        macros: this.getFolderStructure(game.folders.filter(f => f.type === 'Macro')),
-        playlists: this.getFolderStructure(game.folders.filter(f => f.type === 'Playlist'))
+        actors: this.getFolderStructure(game.folders.filter((f) => f.type === 'Actor')),
+        items: this.getFolderStructure(game.folders.filter((f) => f.type === 'Item')),
+        scenes: this.getFolderStructure(game.folders.filter((f) => f.type === 'Scene')),
+        journals: this.getFolderStructure(game.folders.filter((f) => f.type === 'JournalEntry')),
+        tables: this.getFolderStructure(game.folders.filter((f) => f.type === 'RollTable')),
+        macros: this.getFolderStructure(game.folders.filter((f) => f.type === 'Macro')),
+        playlists: this.getFolderStructure(game.folders.filter((f) => f.type === 'Playlist'))
       },
 
       // Compendium packs information
@@ -150,7 +148,7 @@ export class WorldAPI {
   getActorStatsByType() {
     const stats = {};
 
-    game.actors.forEach(actor => {
+    game.actors.forEach((actor) => {
       const type = actor.type;
       if (!stats[type]) {
         stats[type] = 0;
@@ -168,7 +166,7 @@ export class WorldAPI {
     const stats = {};
 
     // Count world items
-    game.items.forEach(item => {
+    game.items.forEach((item) => {
       const type = item.type;
       if (!stats[type]) {
         stats[type] = 0;
@@ -177,8 +175,8 @@ export class WorldAPI {
     });
 
     // Count actor items
-    game.actors.forEach(actor => {
-      actor.items.forEach(item => {
+    game.actors.forEach((actor) => {
+      actor.items.forEach((item) => {
         const type = item.type;
         if (!stats[type]) {
           stats[type] = 0;
@@ -211,14 +209,16 @@ export class WorldAPI {
       turn: combat.turn,
       combatantCount: combat.combatants.size,
       started: combat.started,
-      currentCombatant: combat.combatant ? {
-        id: combat.combatant.id,
-        name: combat.combatant.name,
-        initiative: combat.combatant.initiative
-      } : null,
+      currentCombatant: combat.combatant
+        ? {
+            id: combat.combatant.id,
+            name: combat.combatant.name,
+            initiative: combat.combatant.initiative
+          }
+        : null,
       initiative: Array.from(combat.combatants.values())
         .sort((a, b) => (b.initiative || 0) - (a.initiative || 0))
-        .map(combatant => ({
+        .map((combatant) => ({
           id: combatant.id,
           actorId: combatant.actorId,
           name: combatant.name,
@@ -249,7 +249,7 @@ export class WorldAPI {
       'core.tokenDragPreview'
     ];
 
-    safeKeys.forEach(key => {
+    safeKeys.forEach((key) => {
       try {
         const value = game.settings.get('core', key.replace('core.', ''));
         safeSettings[key] = value;
@@ -265,18 +265,19 @@ export class WorldAPI {
    * Get folder structure information
    */
   getFolderStructure(folders) {
-    return folders.map(folder => ({
+    return folders.map((folder) => ({
       id: folder.id,
       name: folder.name,
       type: folder.type,
       depth: folder.depth,
       parent: folder.parent?.id || null,
-      children: folder.children?.map(child => child.id) || [],
-      contents: folder.contents?.map(doc => ({
-        id: doc.id,
-        name: doc.name,
-        type: doc.documentName
-      })) || []
+      children: folder.children?.map((child) => child.id) || [],
+      contents:
+        folder.contents?.map((doc) => ({
+          id: doc.id,
+          name: doc.name,
+          type: doc.documentName
+        })) || []
     }));
   }
 }

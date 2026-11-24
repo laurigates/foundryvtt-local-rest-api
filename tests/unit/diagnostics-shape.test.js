@@ -14,8 +14,14 @@ function call(api, method, query = {}) {
   let body;
   let status = 200;
   const res = {
-    json: (data) => { body = data; return res; },
-    status: (code) => { status = code; return res; }
+    json: (data) => {
+      body = data;
+      return res;
+    },
+    status: (code) => {
+      status = code;
+      return res;
+    }
   };
   api[method]({ query }, res);
   return { body, status };
@@ -73,7 +79,11 @@ describe('DiagnosticsAPI response shapes', () => {
   });
 
   test('search finds every matching entry, not every other one', () => {
-    api.logBuffer = [entry('log', 'match one'), entry('log', 'match two'), entry('log', 'match three')];
+    api.logBuffer = [
+      entry('log', 'match one'),
+      entry('log', 'match two'),
+      entry('log', 'match three')
+    ];
     const { body } = call(api, 'searchLogs', { pattern: 'match' });
 
     expect(body.success).toBe(true);
@@ -102,7 +112,11 @@ describe('DiagnosticsAPI response shapes', () => {
     })();
 
     expect(body.success).toBe(true);
-    expect(body.data.server).toEqual({ foundryVersion: '14.369', systemVersion: '6.0.6', worldId: 'waterdeep' });
+    expect(body.data.server).toEqual({
+      foundryVersion: '14.369',
+      systemVersion: '6.0.6',
+      worldId: 'waterdeep'
+    });
     expect(body.data.performance).toEqual({ connectedClients: 0 });
     expect(body.data.status).toBe('healthy');
   });

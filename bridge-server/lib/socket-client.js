@@ -10,7 +10,7 @@ import { FoundryAuthenticator } from './foundry-auth.js';
 export class FoundrySocketClient extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     this.foundryUrl = options.foundryUrl || 'http://localhost:30000';
     this.apiKey = options.apiKey;
     this.timeout = options.timeout || 5000;
@@ -18,20 +18,20 @@ export class FoundrySocketClient extends EventEmitter {
     this.requestTimeout = options.requestTimeout || this.timeout;
     this.maxRetries = options.maxRetries || 3;
     this.reconnectDelay = options.reconnectDelay || 1000;
-    
+
     // Authentication options
     this.username = options.username;
     this.password = options.password;
     this.userId = options.userId;
     this.worldId = options.worldId;
-    
+
     this.socket = null;
     this.isConnected = false;
     this.pendingRequests = new Map();
     this.requestCounter = 0;
     this.retryCount = 0;
     this.authenticator = null;
-    
+
     // Error tracking
     this.lastError = null;
     this.errorHistory = [];
@@ -46,7 +46,7 @@ export class FoundrySocketClient extends EventEmitter {
   log(level, message, data = null) {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] [SocketClient] ${message}`;
-    
+
     if (level === 'error') {
       console.error(logMessage, data || '');
     } else if (level === 'warn') {
@@ -99,7 +99,7 @@ export class FoundrySocketClient extends EventEmitter {
         'The FoundryVTT REST API module may not be installed or enabled',
         'Check that the module is installed in FoundryVTT',
         'Verify the module is enabled for the current world',
-        'Ensure the module\'s socket server is running'
+        "Ensure the module's socket server is running"
       ];
     } else if (error.message?.includes('world')) {
       errorInfo.type = 'world_not_loaded';
@@ -134,8 +134,11 @@ export class FoundrySocketClient extends EventEmitter {
   async connect() {
     this.connectionAttempts++;
     this.lastConnectionAttempt = new Date().toISOString();
-    this.log('info', `Connecting to FoundryVTT at ${this.foundryUrl} (attempt ${this.connectionAttempts})`);
-    
+    this.log(
+      'info',
+      `Connecting to FoundryVTT at ${this.foundryUrl} (attempt ${this.connectionAttempts})`
+    );
+
     try {
       let socketOptions = {
         path: '/socket.io',
@@ -145,7 +148,7 @@ export class FoundrySocketClient extends EventEmitter {
         reconnectionAttempts: 5,
         timeout: this.requestTimeout,
         forceNew: true,
-        transports: ['websocket'],  // Force WebSocket for better compatibility
+        transports: ['websocket'], // Force WebSocket for better compatibility
         query: {
           // Identify as an API client
           client: 'foundryvtt-rest-bridge',
@@ -154,11 +157,14 @@ export class FoundrySocketClient extends EventEmitter {
       };
 
       // If username and password are provided, authenticate first
-      this.log('info', `Checking auth - username: ${this.username}, has password: ${!!this.password}`);
-      
+      this.log(
+        'info',
+        `Checking auth - username: ${this.username}, has password: ${!!this.password}`
+      );
+
       if ((this.username || this.userId) && this.password) {
         this.log('info', `Starting authentication for user: ${this.username}`);
-        
+
         // Create and initialize the authenticator
         this.authenticator = new FoundryAuthenticator({
           foundryUrl: this.foundryUrl,
@@ -167,7 +173,7 @@ export class FoundrySocketClient extends EventEmitter {
           userId: this.userId,
           worldId: this.worldId
         });
-        
+
         try {
           // Authenticate and get session cookie
           await this.authenticator.authenticate();
@@ -179,7 +185,7 @@ export class FoundrySocketClient extends EventEmitter {
             ...authOptions,
             query: { ...socketOptions.query, ...authOptions.query }
           };
-          
+
           this.log('info', 'Connecting as authenticated Socket.io client');
         } catch (authError) {
           this.log('error', `Authentication failed: ${authError.message}`);
@@ -195,14 +201,14 @@ export class FoundrySocketClient extends EventEmitter {
       this.socket = io(this.foundryUrl, socketOptions);
 
       this.setupEventHandlers();
-      
+
       // Wait for connection
       const result = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           const timeoutError = new Error(`Connection timeout after ${this.requestTimeout}ms`);
           const errorInfo = this.categorizeError(timeoutError);
           this.log('error', `Connection timeout - ${errorInfo.type}`);
-          errorInfo.troubleshooting.forEach(hint => this.log('info', `  → ${hint}`));
+          errorInfo.troubleshooting.forEach((hint) => this.log('info', `  → ${hint}`));
           reject(timeoutError);
         }, this.requestTimeout);
 
@@ -213,11 +219,11 @@ export class FoundrySocketClient extends EventEmitter {
           this.connectionAttempts = 0; // Reset on successful connection
           this.log('info', '✅ Connected to FoundryVTT Socket.io server');
           this.log('info', `Socket ID: ${this.socket.id}`);
-          
+
           if (this.authenticator && this.authenticator.isAuthenticated) {
             this.log('info', `Connected as authenticated user: ${this.authenticator.userId}`);
           }
-          
+
           this.emit('connected');
           resolve(true);
         });
@@ -230,18 +236,17 @@ export class FoundrySocketClient extends EventEmitter {
             this.log('error', `Error type: ${error.type}`, error.data);
           }
           this.log('info', 'Troubleshooting suggestions:');
-          errorInfo.troubleshooting.forEach(hint => this.log('info', `  → ${hint}`));
+          errorInfo.troubleshooting.forEach((hint) => this.log('info', `  → ${hint}`));
           reject(error);
         });
       });
 
       return result;
-
     } catch (error) {
       const errorInfo = this.categorizeError(error);
       this.log('error', `Failed to connect - ${errorInfo.type}: ${error.message}`);
       this.log('info', 'Troubleshooting suggestions:');
-      errorInfo.troubleshooting.forEach(hint => this.log('info', `  → ${hint}`));
+      errorInfo.troubleshooting.forEach((hint) => this.log('info', `  → ${hint}`));
       throw error;
     }
   }
@@ -254,12 +259,12 @@ export class FoundrySocketClient extends EventEmitter {
       this.log('warn', `Disconnected: ${reason}`);
       this.isConnected = false;
       this.emit('disconnected', reason);
-      
+
       // Track disconnect as error if unexpected
       if (reason === 'transport error' || reason === 'server namespace disconnect') {
         this.categorizeError(new Error(`Disconnected: ${reason}`));
       }
-      
+
       // Reject all pending requests
       for (const { reject } of this.pendingRequests.values()) {
         reject(new Error('Socket disconnected'));
@@ -319,7 +324,7 @@ export class FoundrySocketClient extends EventEmitter {
    */
   handleApiResponse(data) {
     const { requestId, success, result, data: responseData, error, message } = data;
-    
+
     if (!requestId) {
       this.log('warn', 'Received response without requestId:', data);
       return;
@@ -355,13 +360,13 @@ export class FoundrySocketClient extends EventEmitter {
     }
 
     const requestId = `req_${++this.requestCounter}_${Date.now()}`;
-    
+
     // Map endpoint to message type
     const type = this.getMessageType(endpoint, options.method);
-    
+
     // Extract route parameters from endpoint
     const routeParams = this.extractRouteParams(endpoint);
-    
+
     const requestData = {
       type,
       requestId,
@@ -393,7 +398,7 @@ export class FoundrySocketClient extends EventEmitter {
 
       // Send request to FoundryVTT module
       this.socket.emit(this.namespace, requestData);
-      
+
       this.log('debug', `Sent request ${requestId}: ${options.method || 'GET'} ${endpoint}`);
     });
   }
@@ -404,7 +409,7 @@ export class FoundrySocketClient extends EventEmitter {
   getMessageType(endpoint, method = 'GET') {
     // Remove /api prefix if present
     const path = endpoint.replace(/^\/api/, '');
-    
+
     // Map common endpoints
     if (path === '/actors' && method === 'GET') return 'actors.search';
     if (path.match(/^\/actors\/[\w-]+$/) && method === 'GET') return 'actors.get';
@@ -420,13 +425,13 @@ export class FoundrySocketClient extends EventEmitter {
     const diagnostics = path.match(/^\/diagnostics\/(logs|search|health|errors)$/);
     if (diagnostics && method === 'GET') return `diagnostics.${diagnostics[1]}`;
     if (path === '/compendium/search' && method === 'GET') return 'compendium.search';
-    
+
     // Default mapping
     const resource = path.split('/')[1] || 'unknown';
     const action = method === 'GET' ? 'get' : method.toLowerCase();
     return `${resource}.${action}`;
   }
-  
+
   /**
    * Extract route parameters from endpoint
    */
@@ -439,20 +444,20 @@ export class FoundrySocketClient extends EventEmitter {
     }
     return {};
   }
-  
+
   /**
    * Disconnect from FoundryVTT server
    */
   disconnect() {
     this.log('info', 'Disconnecting from FoundryVTT');
-    
+
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
     }
-    
+
     this.isConnected = false;
-    
+
     // Clear pending requests
     for (const { timeout, reject } of this.pendingRequests.values()) {
       clearTimeout(timeout);
@@ -520,30 +525,32 @@ export class FoundrySocketClient extends EventEmitter {
    */
   getTroubleshootingSuggestions() {
     const suggestions = [];
-    
+
     if (!this.isConnected) {
       suggestions.push('Socket is not connected to FoundryVTT');
-      
+
       if (this.lastError) {
         suggestions.push(`Last error: ${this.lastError.type}`);
         suggestions.push(...this.lastError.troubleshooting);
       }
-      
+
       if (this.connectionAttempts > 3) {
         suggestions.push('Multiple connection attempts have failed');
         suggestions.push('Consider checking FoundryVTT logs for more information');
       }
     }
-    
+
     if (this.pendingRequests.size > 5) {
-      suggestions.push(`${this.pendingRequests.size} requests are pending - possible performance issue`);
+      suggestions.push(
+        `${this.pendingRequests.size} requests are pending - possible performance issue`
+      );
     }
-    
+
     if (this.errorHistory.length > 0) {
-      const errorTypes = [...new Set(this.errorHistory.map(e => e.type))];
+      const errorTypes = [...new Set(this.errorHistory.map((e) => e.type))];
       suggestions.push(`Recent error types: ${errorTypes.join(', ')}`);
     }
-    
+
     return suggestions;
   }
 }

@@ -61,7 +61,6 @@ export function formatSceneBackground(scene) {
 }
 
 export class ScenesAPI {
-
   /**
    * Get current active scene information
    * GET /api/scenes/current
@@ -84,7 +83,6 @@ export class ScenesAPI {
         success: true,
         data: sceneData
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error getting current scene:', error);
       res.status(500).json({
@@ -118,7 +116,6 @@ export class ScenesAPI {
         success: true,
         data: sceneData
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error getting scene:', error);
       res.status(500).json({
@@ -142,7 +139,7 @@ export class ScenesAPI {
       // Filter by query if specified (search in name and navigation name)
       if (query) {
         const searchQuery = query.toLowerCase();
-        scenes = scenes.filter(scene => {
+        scenes = scenes.filter((scene) => {
           const name = scene.name?.toLowerCase() || '';
           const navName = scene.navName?.toLowerCase() || '';
           return name.includes(searchQuery) || navName.includes(searchQuery);
@@ -153,7 +150,7 @@ export class ScenesAPI {
       scenes = scenes.slice(0, parseInt(limit));
 
       // Format response
-      const results = scenes.map(scene => this.formatSceneSummary(scene));
+      const results = scenes.map((scene) => this.formatSceneSummary(scene));
 
       res.json({
         success: true,
@@ -161,7 +158,6 @@ export class ScenesAPI {
         total: results.length,
         query: { query, limit }
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error searching scenes:', error);
       res.status(500).json({
@@ -225,19 +221,21 @@ export class ScenesAPI {
         distance: scene.grid?.distance || 5,
         units: scene.grid?.units || 'ft'
       },
-      tokens: Array.from(scene.tokens || []).map(token => this.formatToken(token)),
-      lights: Array.from(scene.lights || []).map(light => this.formatLight(light)),
-      walls: Array.from(scene.walls || []).map(wall => this.formatWall(wall)),
-      sounds: Array.from(scene.sounds || []).map(sound => this.formatSound(sound)),
-      notes: Array.from(scene.notes || []).map(note => this.formatNote(note)),
-      tiles: Array.from(scene.tiles || []).map(tile => this.formatTile(tile)),
-      drawings: Array.from(scene.drawings || []).map(drawing => this.formatDrawing(drawing)),
+      tokens: Array.from(scene.tokens || []).map((token) => this.formatToken(token)),
+      lights: Array.from(scene.lights || []).map((light) => this.formatLight(light)),
+      walls: Array.from(scene.walls || []).map((wall) => this.formatWall(wall)),
+      sounds: Array.from(scene.sounds || []).map((sound) => this.formatSound(sound)),
+      notes: Array.from(scene.notes || []).map((note) => this.formatNote(note)),
+      tiles: Array.from(scene.tiles || []).map((tile) => this.formatTile(tile)),
+      drawings: Array.from(scene.drawings || []).map((drawing) => this.formatDrawing(drawing)),
       playlist: scene.playlist || null,
       playlistSound: scene.playlistSound || null,
-      journal: scene.journal ? {
-        id: scene.journal.id,
-        name: scene.journal.name
-      } : null,
+      journal: scene.journal
+        ? {
+            id: scene.journal.id,
+            name: scene.journal.name
+          }
+        : null,
       ownership: scene.ownership,
       flags: scene.flags
     };

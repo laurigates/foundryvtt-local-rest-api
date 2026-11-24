@@ -58,13 +58,12 @@ export function matchesCompendiumFilters(pack, entry, filters) {
   if (source) {
     const s = entry.system?.source ?? {};
     const needle = lower(source);
-    if (![s.rules, s.book, s.custom].some(value => lower(value).includes(needle))) return false;
+    if (![s.rules, s.book, s.custom].some((value) => lower(value).includes(needle))) return false;
   }
   return true;
 }
 
 export class CompendiumAPI {
-
   /**
    * Search compendium entries by name and metadata
    * GET /api/compendium/search?query=fire&packType=Item&itemType=spell&spellLevel=3&source=2014&compendiumId=dnd5e.spells&limit=20&offset=0
@@ -100,7 +99,6 @@ export class CompendiumAPI {
         total: matches.length,
         query: req.query
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error searching compendiums:', error);
       res.status(500).json({

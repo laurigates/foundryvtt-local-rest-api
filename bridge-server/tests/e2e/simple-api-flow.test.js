@@ -29,10 +29,10 @@ class MockFoundryServer {
   async start() {
     this.io.on('connection', (socket) => {
       console.log(`Mock FoundryVTT: Client connected ${socket.id}`);
-      
+
       socket.on('module.foundryvtt-local-rest-api', (data) => {
         const { type, requestId, auth } = data;
-        
+
         // Simple auth check
         if (auth?.apiKey !== testApiKey) {
           socket.emit('module.foundryvtt-local-rest-api.response', {
@@ -78,7 +78,7 @@ class MockFoundryServer {
 
   async stop() {
     this.io.close();
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.httpServer.close(resolve);
     });
   }
@@ -97,7 +97,7 @@ class SimpleBridgeServer {
   async start() {
     // Setup middleware
     this.app.use(express.json());
-    
+
     // Status endpoint (before auth middleware)
     this.app.get('/api/status', (req, res) => {
       res.json({
@@ -106,7 +106,7 @@ class SimpleBridgeServer {
         server: 'test-bridge-server'
       });
     });
-    
+
     // Auth middleware for other endpoints
     this.app.use('/api', this.authManager.authenticate);
 
@@ -155,7 +155,7 @@ class SimpleBridgeServer {
       this.socketClient.disconnect();
     }
     if (this.server) {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         this.server.close(resolve);
       });
     }
@@ -168,7 +168,7 @@ describe('Simplified E2E API Flow Tests', () => {
 
   beforeAll(async () => {
     console.log('Starting test servers...');
-    
+
     // Start mock FoundryVTT
     mockFoundryServer = new MockFoundryServer(mockFoundryPort);
     await mockFoundryServer.start();
@@ -176,9 +176,9 @@ describe('Simplified E2E API Flow Tests', () => {
     // Start bridge server
     bridgeServer = new SimpleBridgeServer();
     await bridgeServer.start();
-    
+
     // Wait for connections to stabilize
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }, 30000);
 
   afterAll(async () => {
@@ -188,9 +188,7 @@ describe('Simplified E2E API Flow Tests', () => {
   }, 10000);
 
   test('should return status without authentication', async () => {
-    const response = await request(`http://localhost:${testPort}`)
-      .get('/api/status')
-      .expect(200);
+    const response = await request(`http://localhost:${testPort}`).get('/api/status').expect(200);
 
     expect(response.body).toMatchObject({
       success: true,
@@ -200,9 +198,7 @@ describe('Simplified E2E API Flow Tests', () => {
   });
 
   test('should require authentication for actors endpoint', async () => {
-    const response = await request(`http://localhost:${testPort}`)
-      .get('/api/actors')
-      .expect(401);
+    const response = await request(`http://localhost:${testPort}`).get('/api/actors').expect(401);
 
     expect(response.body).toMatchObject({
       success: false,

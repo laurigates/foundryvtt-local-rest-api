@@ -39,17 +39,17 @@ export class AuthManager {
     }
 
     const apiKey = this.generateApiKey();
-    
+
     // Store in user flags (persisted in v13)
     await user.setFlag('foundryvtt-local-rest-api', 'apiKey', apiKey);
     await user.setFlag('foundryvtt-local-rest-api', 'apiKeyCreated', Date.now());
-    
+
     // Update cache
     this.userKeys.set(user.id, apiKey);
-    
+
     // Log the generation (audit trail)
     console.log(`Foundry Local REST API | Generated new API key for user: ${user.name}`);
-    
+
     return apiKey;
   }
 
@@ -64,10 +64,10 @@ export class AuthManager {
     // Remove from user flags
     await user.unsetFlag('foundryvtt-local-rest-api', 'apiKey');
     await user.unsetFlag('foundryvtt-local-rest-api', 'apiKeyCreated');
-    
+
     // Clear cache
     this.userKeys.delete(user.id);
-    
+
     console.log(`Foundry Local REST API | Revoked API key for user: ${user.name}`);
   }
 
@@ -89,7 +89,7 @@ export class AuthManager {
     if (apiKey) {
       this.userKeys.set(user.id, apiKey);
     }
-    
+
     return apiKey;
   }
 
@@ -156,7 +156,7 @@ export class AuthManager {
       const padding = '0'.repeat(Math.max(a.length, b.length));
       const paddedA = (a + padding).slice(0, padding.length);
       const paddedB = (b + padding).slice(0, padding.length);
-      
+
       let result = 1; // Starts non-zero, so the comparison is always false
       for (let i = 0; i < padding.length; i++) {
         result |= paddedA.charCodeAt(i) ^ paddedB.charCodeAt(i);
@@ -193,7 +193,7 @@ export class AuthManager {
    */
   async getUsersWithApiKeys() {
     const users = [];
-    
+
     for (const user of game.users) {
       const apiKey = user.getFlag('foundryvtt-local-rest-api', 'apiKey');
       if (apiKey) {
@@ -203,12 +203,12 @@ export class AuthManager {
           name: user.name,
           role: user.role,
           hasApiKey: true,
-          created: created ? new Date(created) : null,
+          created: created ? new Date(created) : null
           // Don't include the actual key for security
         });
       }
     }
-    
+
     return users;
   }
 
@@ -221,26 +221,26 @@ export class AuthManager {
     if (user) {
       // Rotate user key
       const newKey = await this.generateUserApiKey(user);
-      
+
       // Log rotation for audit
       console.log(`Foundry Local REST API | Rotated API key for user: ${user.name}`);
-      
+
       // Optionally notify about the rotation
       if (game.user.isGM) {
         ui.notifications.info(`API key rotated for user: ${user.name}`);
       }
-      
+
       return newKey;
     } else {
       // Rotate global key
       const newKey = this.generateApiKey();
       this.globalApiKey = newKey;
-      
+
       // Store in settings
       await game.settings.set('foundryvtt-local-rest-api', 'api-key', newKey);
-      
+
       console.log('Foundry Local REST API | Rotated global API key');
-      
+
       return newKey;
     }
   }
@@ -254,8 +254,8 @@ export class AuthManager {
   isApiKeyExpired(user, maxAge = 30 * 24 * 60 * 60 * 1000) {
     const created = user.getFlag('foundryvtt-local-rest-api', 'apiKeyCreated');
     if (!created) return false;
-    
-    return (Date.now() - created) > maxAge;
+
+    return Date.now() - created > maxAge;
   }
 
   /**
@@ -304,12 +304,12 @@ export class AuthManager {
     };
 
     const user = await User.create(userData);
-    
+
     // Generate API key for this user
     const apiKey = await this.generateUserApiKey(user);
-    
+
     console.log(`Foundry Local REST API | Created dedicated API user: ${user.name}`);
-    
+
     return {
       user,
       apiKey,

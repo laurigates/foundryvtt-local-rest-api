@@ -14,7 +14,7 @@ class MockSocketMessageHandler {
       validateApiKey: jest.fn().mockReturnValue(true),
       getCurrentApiKey: jest.fn().mockReturnValue('test-api-key')
     };
-    
+
     this.handlers = {
       actors: {
         searchActors: jest.fn(),
@@ -56,16 +56,8 @@ class MockSocketMessageHandler {
   }
 
   async handleMessage(data) {
-    const { 
-      type, 
-      endpoint,
-      requestId, 
-      auth, 
-      params = {}, 
-      query = {},
-      body = {} 
-    } = data;
-    
+    const { type, endpoint, requestId, auth, params = {}, query = {}, body = {} } = data;
+
     // Map endpoint to type if needed
     let messageType = type;
     if (!messageType && endpoint) {
@@ -75,7 +67,8 @@ class MockSocketMessageHandler {
       } else if (parts[0] === 'items') {
         messageType = params.id ? 'items.get' : 'items.search';
       } else if (parts[0] === 'scenes') {
-        messageType = parts[1] === 'current' ? 'scenes.current' : (params.id ? 'scenes.get' : 'scenes.search');
+        messageType =
+          parts[1] === 'current' ? 'scenes.current' : params.id ? 'scenes.get' : 'scenes.search';
       } else if (parts[0] === 'world') {
         messageType = 'world.info';
       } else if (parts[0] === 'dice' && parts[1] === 'roll') {
@@ -84,7 +77,7 @@ class MockSocketMessageHandler {
         messageType = `diagnostics.${parts[1] || 'health'}`;
       }
     }
-    
+
     // Merge query into params for compatibility
     const mergedParams = { ...params, query: { ...params.query, ...query } };
 
@@ -116,7 +109,6 @@ class MockSocketMessageHandler {
       // Route message to appropriate handler
       const result = await this.routeMessage(messageType, mergedParams, body);
       return this.createSuccessResponse(requestId, result);
-
     } catch (error) {
       console.error('Foundry Local REST API | Error handling socket message:', error);
       return this.createErrorResponse(requestId, 'Internal Server Error', error.message);
@@ -366,9 +358,9 @@ describe('SocketMessageHandler', () => {
   describe('setApiKey', () => {
     test('should call AuthManager setApiKey', () => {
       const testKey = 'test-api-key-123';
-      
+
       handler.setApiKey(testKey);
-      
+
       expect(mockAuthManager.setApiKey).toHaveBeenCalledWith(testKey);
       expect(mockAuthManager.setApiKey).toHaveBeenCalledTimes(1);
     });
@@ -477,7 +469,7 @@ describe('SocketMessageHandler', () => {
 
     test('should proceed with valid authentication', async () => {
       mockAuthManager.validateApiKey.mockReturnValue(true);
-      
+
       // Mock successful actor search
       mockHandlers.actors.searchActors.mockImplementation((req, res) => {
         res.json({ success: true, data: [] });
@@ -1072,7 +1064,9 @@ describe('SocketMessageHandler', () => {
 
       handler.logRequest('actors.search', true);
 
-      expect(consoleSpy).toHaveBeenCalledWith('Foundry Local REST API | Socket message: actors.search (authenticated)');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Foundry Local REST API | Socket message: actors.search (authenticated)'
+      );
       consoleSpy.mockRestore();
     });
 
@@ -1082,7 +1076,9 @@ describe('SocketMessageHandler', () => {
 
       handler.logRequest('actors.search', false);
 
-      expect(consoleSpy).toHaveBeenCalledWith('Foundry Local REST API | Socket message: actors.search (unauthorized)');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Foundry Local REST API | Socket message: actors.search (unauthorized)'
+      );
       consoleSpy.mockRestore();
     });
   });
@@ -1107,7 +1103,7 @@ describe('SocketMessageHandler', () => {
       const response = await handler.handleMessage(message);
 
       expect(response.success).toBe(true);
-      
+
       const callArgs = mockHandlers.actors.searchActors.mock.calls[0];
       expect(callArgs[0].query).toEqual({
         name: 'existing',
@@ -1127,7 +1123,7 @@ describe('SocketMessageHandler', () => {
       const response = await handler.handleMessage(message);
 
       expect(response.success).toBe(true);
-      
+
       const callArgs = mockHandlers.actors.searchActors.mock.calls[0];
       expect(callArgs[0].query).toEqual({});
     });
@@ -1207,7 +1203,7 @@ describe('SocketMessageHandler', () => {
 
       // Verify authentication was checked
       expect(mockAuthManager.validateApiKey).toHaveBeenCalledWith('valid-key');
-      
+
       // Verify handler was called with correct parameters
       expect(mockHandlers.actors.searchActors).toHaveBeenCalled();
       const callArgs = mockHandlers.actors.searchActors.mock.calls[0];
@@ -1231,7 +1227,7 @@ describe('SocketMessageHandler', () => {
 
       expect(response.success).toBe(true);
       expect(mockHandlers.actors.getActor).toHaveBeenCalled();
-      
+
       const callArgs = mockHandlers.actors.getActor.mock.calls[0];
       expect(callArgs[0].params.id).toBe('actor-456');
       expect(callArgs[0].query.detailed).toBe('true');

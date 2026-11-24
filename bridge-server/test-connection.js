@@ -2,12 +2,12 @@
 
 /**
  * Connection Test Script for FoundryVTT Bridge Server
- * 
+ *
  * This script tests the connection between the bridge server and FoundryVTT,
  * providing detailed diagnostics and troubleshooting suggestions.
- * 
+ *
  * Usage: node test-connection.js [options]
- * 
+ *
  * Options:
  *   --foundry-url <url>    FoundryVTT server URL (default: http://localhost:30000)
  *   --api-key <key>        API key for authentication
@@ -78,7 +78,7 @@ const colors = {
 function log(level, message, data = null) {
   let color = colors.reset;
   let prefix = '';
-  
+
   switch (level) {
     case 'success':
       color = colors.green;
@@ -102,17 +102,20 @@ function log(level, message, data = null) {
       prefix = '🔍';
       break;
   }
-  
+
   console.log(`${color}${prefix} ${message}${colors.reset}`, data || '');
 }
 
 async function testConnection() {
   log('info', `${colors.bright}FoundryVTT Bridge Server Connection Test${colors.reset}`);
-  log('info', '=' .repeat(50));
+  log('info', '='.repeat(50));
   log('info', `FoundryVTT URL: ${options.foundryUrl}`);
-  log('info', `API Key: ${options.apiKey ? options.apiKey.substring(0, 10) + '...' : colors.red + 'NOT SET' + colors.reset}`);
+  log(
+    'info',
+    `API Key: ${options.apiKey ? options.apiKey.substring(0, 10) + '...' : colors.red + 'NOT SET' + colors.reset}`
+  );
   log('info', `Timeout: ${options.timeout}ms`);
-  log('info', '=' .repeat(50));
+  log('info', '='.repeat(50));
   console.log();
 
   const client = new FoundrySocketClient({
@@ -130,19 +133,19 @@ async function testConnection() {
     log('info', `Socket ID: ${client.socket.id}`);
   } catch (error) {
     log('error', `Failed to connect: ${error.message}`);
-    
+
     // Get diagnostic information even on failure
     const diagnostics = client.getConnectionDiagnostics();
-    
+
     if (diagnostics.lastError) {
       console.log();
       log('error', `Error Type: ${diagnostics.lastError.type}`);
       log('info', 'Troubleshooting suggestions:');
-      diagnostics.lastError.troubleshooting.forEach(hint => {
+      diagnostics.lastError.troubleshooting.forEach((hint) => {
         console.log(`  ${colors.yellow}→ ${hint}${colors.reset}`);
       });
     }
-    
+
     return false;
   }
 
@@ -154,20 +157,23 @@ async function testConnection() {
       method: 'GET',
       headers: { 'x-api-key': options.apiKey }
     });
-    
+
     log('success', 'REST API module is responding!');
     log('debug', 'Status response:', JSON.stringify(result, null, 2));
-    
+
     if (result.world) {
       log('info', `World: ${result.world.title || 'Unknown'}`);
       log('info', `System: ${result.world.system || 'Unknown'}`);
     }
   } catch (error) {
     log('error', `API communication failed: ${error.message}`);
-    
+
     if (error.message.includes('401') || error.message.includes('unauthorized')) {
       log('warning', 'Authentication failed - check your API key');
-      log('info', 'Make sure the API key matches the one configured in the FoundryVTT module settings');
+      log(
+        'info',
+        'Make sure the API key matches the one configured in the FoundryVTT module settings'
+      );
     } else if (error.message.includes('timeout')) {
       log('warning', 'Request timed out - the module may not be responding');
       log('info', 'Check that the REST API module is enabled in FoundryVTT');
@@ -178,36 +184,39 @@ async function testConnection() {
   console.log();
   log('info', 'Step 3: Gathering diagnostic information...');
   const diagnostics = client.getConnectionDiagnostics();
-  
+
   console.log();
   log('info', `${colors.bright}Connection Statistics:${colors.reset}`);
   log('info', `  Connection Attempts: ${diagnostics.statistics.connectionAttempts}`);
   log('info', `  Retry Count: ${diagnostics.statistics.retryCount}`);
   log('info', `  Pending Requests: ${diagnostics.statistics.pendingRequests}`);
-  
+
   if (diagnostics.errorHistory.length > 0) {
     console.log();
-    log('warning', `${colors.bright}Error History (last ${diagnostics.errorHistory.length} errors):${colors.reset}`);
+    log(
+      'warning',
+      `${colors.bright}Error History (last ${diagnostics.errorHistory.length} errors):${colors.reset}`
+    );
     diagnostics.errorHistory.forEach((error, index) => {
       log('warning', `  ${index + 1}. [${error.timestamp}] ${error.type}: ${error.message}`);
     });
   }
-  
+
   const suggestions = client.getTroubleshootingSuggestions();
   if (suggestions.length > 0) {
     console.log();
     log('info', `${colors.bright}Additional Troubleshooting:${colors.reset}`);
-    suggestions.forEach(suggestion => {
+    suggestions.forEach((suggestion) => {
       console.log(`  ${colors.yellow}→ ${suggestion}${colors.reset}`);
     });
   }
 
   // Disconnect
   client.disconnect();
-  
+
   console.log();
-  log('info', '=' .repeat(50));
-  
+  log('info', '='.repeat(50));
+
   if (client.isConnected) {
     log('success', 'Connection test completed successfully!');
     return true;
@@ -219,10 +228,10 @@ async function testConnection() {
 
 // Run the test
 testConnection()
-  .then(success => {
+  .then((success) => {
     process.exit(success ? 0 : 1);
   })
-  .catch(error => {
+  .catch((error) => {
     log('error', `Unexpected error: ${error.message}`);
     if (options.verbose) {
       console.error(error.stack);

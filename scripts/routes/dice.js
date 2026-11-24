@@ -3,7 +3,6 @@
  */
 
 export class DiceAPI {
-
   /**
    * Roll dice using FoundryVTT's native dice system
    * POST /api/dice/roll
@@ -57,7 +56,6 @@ export class DiceAPI {
         success: true,
         data: result
       });
-
     } catch (error) {
       console.error('Foundry Local REST API | Error rolling dice:', error);
       res.status(400).json({
@@ -108,12 +106,12 @@ export class DiceAPI {
     // Process roll terms. The term classes live under foundry.dice.terms;
     // the Die/NumericTerm/OperatorTerm globals are gone in v14.
     const { Die, NumericTerm, OperatorTerm } = foundry.dice.terms;
-    roll.terms.forEach(term => {
+    roll.terms.forEach((term) => {
       if (term instanceof Die) {
         const dieData = {
           faces: term.faces,
           number: term.number,
-          results: term.results.map(r => ({
+          results: term.results.map((r) => ({
             result: r.result,
             active: r.active,
             discarded: r.discarded,
@@ -152,10 +150,8 @@ export class DiceAPI {
 
     // Add roll breakdown for complex rolls
     if (roll.dice.length > 0) {
-      result.breakdown = roll.dice.map(die => {
-        const results = die.results
-          .filter(r => r.active)
-          .map(r => r.result);
+      result.breakdown = roll.dice.map((die) => {
+        const results = die.results.filter((r) => r.active).map((r) => r.result);
 
         return {
           dice: `${die.number}d${die.faces}`,
@@ -166,14 +162,14 @@ export class DiceAPI {
     }
 
     // Add critical success/failure information for d20 rolls
-    if (roll.dice.some(d => d.faces === 20)) {
+    if (roll.dice.some((d) => d.faces === 20)) {
       const d20Results = roll.dice
-        .filter(d => d.faces === 20)
-        .flatMap(d => d.results.filter(r => r.active).map(r => r.result));
+        .filter((d) => d.faces === 20)
+        .flatMap((d) => d.results.filter((r) => r.active).map((r) => r.result));
 
       result.critical = {
-        success: d20Results.some(r => r === 20),
-        failure: d20Results.some(r => r === 1),
+        success: d20Results.some((r) => r === 20),
+        failure: d20Results.some((r) => r === 1),
         naturalRolls: d20Results
       };
     }

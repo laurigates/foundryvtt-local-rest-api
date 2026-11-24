@@ -1,8 +1,8 @@
 /**
  * FoundryVTT REST API Bridge Server
- * 
- * This server creates actual HTTP endpoints and forwards requests to the 
- * FoundryVTT module via socket.io, solving the architectural limitation 
+ *
+ * This server creates actual HTTP endpoints and forwards requests to the
+ * FoundryVTT module via socket.io, solving the architectural limitation
  * where FoundryVTT modules run in browser context and cannot create HTTP servers.
  */
 
@@ -34,7 +34,7 @@ class BridgeServer {
     this.requestTimeout = parseInt(process.env.REQUEST_TIMEOUT) || 5000;
     this.corsOrigin = process.env.CORS_ORIGIN || '*';
     this.logLevel = process.env.LOG_LEVEL || 'info';
-    
+
     // Validate required configuration
     if (!this.apiKey) {
       console.error('[BridgeServer] ERROR: API_KEY environment variable is required');
@@ -89,7 +89,6 @@ class BridgeServer {
 
       // Setup graceful shutdown
       this.setupGracefulShutdown();
-
     } catch (error) {
       console.error('[BridgeServer] Failed to start server:', error.message);
       process.exit(1);
@@ -101,17 +100,21 @@ class BridgeServer {
    */
   setupMiddleware() {
     // Security middleware
-    this.app.use(helmet({
-      crossOriginResourcePolicy: { policy: 'cross-origin' }
-    }));
+    this.app.use(
+      helmet({
+        crossOriginResourcePolicy: { policy: 'cross-origin' }
+      })
+    );
 
     // CORS middleware
-    this.app.use(cors({
-      origin: this.corsOrigin,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
-    }));
+    this.app.use(
+      cors({
+        origin: this.corsOrigin,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
+      })
+    );
 
     // Body parsing middleware
     this.app.use(express.json({ limit: '10mb' }));
@@ -143,7 +146,7 @@ class BridgeServer {
     // Health check endpoint (no auth required)
     this.app.get('/api/status', (req, res) => {
       const socketStatus = this.socketClient.getConnectionStatus();
-      
+
       res.json({
         success: true,
         status: 'ok',
@@ -201,7 +204,7 @@ class BridgeServer {
         availableEndpoints: [
           'GET /api/status',
           'GET /api/actors',
-          'GET /api/actors/:id', 
+          'GET /api/actors/:id',
           'GET /api/items',
           'GET /api/items/:id',
           'POST /api/dice/roll',
@@ -267,7 +270,7 @@ class BridgeServer {
     if (this.isShuttingDown) {
       return;
     }
-    
+
     this.isShuttingDown = true;
     console.log('[BridgeServer] Shutting down...');
 
