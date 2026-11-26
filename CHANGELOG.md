@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.3](https://github.com/laurigates/foundryvtt-local-rest-api/compare/v2.1.2...v2.1.3) (2026-11-25)
+
+
+### Miscellaneous
+
+* **claude:** reconcile Claude Code config with the repo baseline ([#43](https://github.com/laurigates/foundryvtt-local-rest-api/issues/43)) ([b1c78e8](https://github.com/laurigates/foundryvtt-local-rest-api/commit/b1c78e87acd53b9fef41301448a2866515cd6862))
+* **deps:** update dependency @babel/core to v7.29.6 [security] ([#26](https://github.com/laurigates/foundryvtt-local-rest-api/issues/26)) ([67e4b1e](https://github.com/laurigates/foundryvtt-local-rest-api/commit/67e4b1eb11e3e81bbfa36ed29ce23ba91f30a45e))
+
 ## [2.1.2](https://github.com/laurigates/foundryvtt-local-rest-api/compare/v2.1.1...v2.1.2) (2026-11-24)
 
 
